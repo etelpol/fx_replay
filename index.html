@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FX Replay</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f1318">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#0f1318;--panel:#171d25;--line:#252d38;--text:#d5dbe3;--mute:#8793a3;--up:#2bb3a3;--down:#e8574f;--accent:#4c8dff}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;display:flex;background:var(--bg);color:var(--text);font:13px Tahoma,sans-serif}
+#side{width:290px;padding:12px;overflow:auto;background:var(--panel);border-left:1px solid var(--line)}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#info{direction:ltr;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);color:var(--mute)}
+#info b{color:var(--text)}
+#chart{flex:1;min-height:0}
+#bottom{height:230px;overflow:auto;background:var(--panel);border-top:1px solid var(--line);padding:6px 10px}
+h4{margin:14px 0 6px;font-size:13px;color:var(--mute);font-weight:normal;border-bottom:1px solid var(--line);padding-bottom:4px}
+h4:first-child{margin-top:0}
+button,input,select{background:#202935;color:var(--text);border:1px solid var(--line);border-radius:4px;padding:6px;font:inherit}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent)}
+.row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.row>*{flex:1;min-width:0}
+label{flex:none!important;width:70px;color:var(--mute)}
+.buy{background:var(--up)!important;color:#fff;border:0;font-weight:bold;padding:10px}
+.sell{background:var(--down)!important;color:#fff;border:0;font-weight:bold;padding:10px}
+.go{background:var(--accent)!important;color:#fff;border:0}
+table{width:100%;border-collapse:collapse;direction:ltr;text-align:center;margin-bottom:8px}
+th{color:var(--mute);font-weight:normal}
+td,th{padding:3px 4px;border-bottom:1px solid var(--line)}
+.pos{color:var(--up)}.neg{color:var(--down)}
+#stats div{display:flex;justify-content:space-between;padding:2px 0}
+#stats span:last-child{direction:ltr}
+.small{padding:2px 8px}
+#msg{color:var(--mute);margin-top:8px;line-height:1.6}
+@media (max-width:800px){
+body{flex-direction:column;font-size:14px}
+#main{order:1;flex:none}
+#chart{flex:none;height:42vh}
+#bottom{height:auto;max-height:150px}
+#side{order:2;width:100%;flex:1;min-height:0;border-left:0;border-top:1px solid var(--line);padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+input,select,button{font-size:16px;min-height:40px}
+}
+</style>
+</head>
+<body>
+<div id="side">
+  <h4>داده</h4>
+  <div class="row"><input type="file" id="file" accept=".csv,.txt"></div>
+  <div class="row"><button id="demo">ساخت داده تستی</button></div>
+
+  <h4>ری‌پلی</h4>
+  <div class="row"><input type="datetime-local" id="start"></div>
+  <div class="row"><button id="go" class="go">شروع از این تاریخ</button></div>
+  <div class="row"><button id="play">▶ پخش</button><button id="step">گام بعدی</button></div>
+  <div class="row"><label>سرعت</label>
+    <select id="speed"><option value="1">۱ کندل/ثانیه</option><option value="3" selected>۳</option><option value="10">۱۰</option><option value="30">۳۰</option><option value="100">۱۰۰</option><option value="300">۳۰۰</option></select></div>
+  <div class="row"><label>تایم‌فریم</label>
+    <select id="tf"><option value="1">M1</option><option value="5">M5</option><option value="15">M15</option><option value="30">M30</option><option value="60">H1</option><option value="240">H4</option><option value="1440">D1</option></select></div>
+
+  <h4>معامله</h4>
+  <div class="row"><label>Lot</label><input id="lot" type="number" step="0.01" min="0.01" value="0.10"></div>
+  <div class="row"><label>SL</label><input id="sl" type="number" step="any" placeholder="قیمت (اختیاری)"></div>
+  <div class="row"><label>TP</label><input id="tp" type="number" step="any" placeholder="قیمت (اختیاری)"></div>
+  <div class="row"><label>Spread</label><input id="spread" type="number" step="any" value="0.0001"></div>
+  <div class="row"><label>Contract</label><input id="contract" type="number" step="any" value="100000"></div>
+  <div class="row"><button class="buy" id="buy">BUY</button><button class="sell" id="sell">SELL</button></div>
+
+  <h4>آمار</h4>
+  <div id="stats"></div>
+  <div id="msg">فایل CSV بگیر (خروجی MT4/MT5، ترجیحاً M1) یا «ساخت داده تستی» رو بزن.</div>
+</div>
+
+<div id="main">
+  <div id="info">—</div>
+  <div id="chart"></div>
+  <div id="bottom">
+    <table id="tpos"></table>
+    <table id="thist"></table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const INITIAL = 10000;
+let data = [], i = 0, tf = 1, timer = null, acc = 0, bars = [], digits = 5;
+let balance = INITIAL, pos = [], hist = [], nid = 1;
+
+const chart = LightweightCharts.createChart($('chart'), {
+  layout: { background: { color: '#0f1318' }, textColor: '#d5dbe3' },
+  grid: { vertLines: { color: '#171d25' }, horzLines: { color: '#171d25' } },
+  timeScale: { timeVisible: true, secondsVisible: false },
+  autoSize: true
+});
+const series = chart.addCandlestickSeries({
+  upColor: '#2bb3a3', downColor: '#e8574f', borderVisible: false,
+  wickUpColor: '#2bb3a3', wickDownColor: '#e8574f'
+});
+
+// ---------- Data ----------
+function parseCSV(text) {
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split(/[,;\t]/);
+    if (p.length < 5) continue;
+    const m = p[0].match(/^(\d{4})[.\-\/](\d{2})[.\-\/](\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+    if (!m) continue;
+    let h = m[4], mi = m[5], k = 1;
+    if (h === undefined) {
+      const tm = p[1].match(/^(\d{2}):(\d{2})/);
+      if (tm) { h = tm[1]; mi = tm[2]; k = 2; } else { h = 0; mi = 0; }
+    }
+    const t = Date.UTC(+m[1], +m[2] - 1, +m[3], +h, +mi) / 1000;
+    const v = p.slice(k, k + 4).map(Number);
+    if (v.some(isNaN)) continue;
+    out.push({ t, o: v[0], h: v[1], l: v[2], c: v[3] });
+  }
+  out.sort((a, b) => a.t - b.t);
+  return out;
+}
+
+function load(arr) {
+  if (arr.length < 10) { $('msg').textContent = 'داده‌ای پیدا نشد. فرمت فایل رو چک کن.'; return; }
+  pause();
+  data = arr;
+  balance = INITIAL; pos = []; hist = []; nid = 1;
+  digits = Math.min(5, Math.max(2, (String(data[0].c).split('.')[1] || '').length));
+  series.applyOptions({ priceFormat: { type: 'price', precision: digits, minMove: Math.pow(10, -digits) } });
+  $('start').value = new Date(data[0].t * 1000).toISOString().slice(0, 16);
+  i = Math.min(300, data.length - 1);
+  rebuild();
+  $('msg').textContent = data.length + ' کندل بارگذاری شد.';
+  render();
+}
+
+$('file').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => load(parseCSV(r.result));
+  r.readAsText(f);
+};
+
+$('demo').onclick = () => {
+  let t = Date.UTC(2024, 0, 1) / 1000, p = 1.1, out = [];
+  for (let k = 0; k < 60000; k++) {
+    const o = p; let c = o, h = o, l = o;
+    for (let j = 0; j < 4; j++) { c += (Math.random() - 0.5) * 0.0004; h = Math.max(h, c); l = Math.min(l, c); }
+    out.push({ t, o: +o.toFixed(5), h: +h.toFixed(5), l: +l.toFixed(5), c: +c.toFixed(5) });
+    p = c; t += 60;
+  }
+  load(out);
+};
+
+// ---------- Replay ----------
+function addToBars(c) {
+  const sec = tf * 60, b = Math.floor(c.t / sec) * sec, last = bars[bars.length - 1];
+  if (last && last.time === b) {
+    last.high = Math.max(last.high, c.h); last.low = Math.min(last.low, c.l); last.close = c.c;
+  } else bars.push({ time: b, open: c.o, high: c.h, low: c.l, close: c.c });
+  return bars[bars.length - 1];
+}
+
+function rebuild() {
+  bars = [];
+  for (let k = Math.max(0, i - tf * 3000); k <= i; k++) addToBars(data[k]);
+  series.setData(bars);
+}
+
+function stepN(n) {
+  for (let s = 0; s < n; s++) {
+    if (i >= data.length - 1) { pause(); $('msg').textContent = 'به انتهای داده رسیدی.'; break; }
+    i++;
+    series.update(addToBars(data[i]));
+    checkStops(data[i]);
+  }
+  render();
+}
+
+function play() {
+  if (!data.length || timer) return;
+  $('play').textContent = '⏸ توقف';
+  timer = setInterval(() => {
+    acc += (+$('speed').value) / 20;
+    const n = Math.floor(acc); acc -= n;
+    if (n > 0) stepN(n);
+  }, 50);
+}
+function pause() {
+  if (timer) { clearInterval(timer); timer = null; }
+  $('play').textContent = '▶ پخش';
+}
+
+$('play').onclick = () => timer ? pause() : play();
+$('step').onclick = () => { if (data.length) stepN(1); };
+$('tf').onchange = () => { tf = +$('tf').value; if (data.length) rebuild(); };
+$('go').onclick = () => {
+  if (!data.length || !$('start').value) return;
+  pause();
+  const t = Date.parse($('start').value + ':00Z') / 1000;
+  const idx = data.findIndex(c => c.t >= t);
+  i = idx < 0 ? data.length - 1 : idx;
+  rebuild(); render();
+};
+
+// ---------- Trading ----------
+const spread = () => +$('spread').value || 0;
+const contract = () => +$('contract').value || 100000;
+const profitOf = (p, exit) => (p.type === 'buy' ? exit - p.price : p.price - exit) * p.lot * contract();
+const exitNow = p => p.type === 'buy' ? data[i].c : data[i].c + spread();
+
+function openTrade(type) {
+  if (!data.length) return;
+  const lot = +$('lot').value;
+  if (!(lot > 0)) return;
+  const bid = data[i].c;
+  pos.push({
+    id: nid++, type, lot, price: type === 'buy' ? bid + spread() : bid,
+    sl: +$('sl').value || 0, tp: +$('tp').value || 0, t: data[i].t
+  });
+  render();
+}
+
+function closeTrade(p, exit, reason) {
+  const profit = profitOf(p, exit);
+  balance += profit;
+  hist.push({ ...p, exit, profit, ct: data[i].t, reason });
+  pos = pos.filter(x => x !== p);
+}
+window.closeById = id => { const p = pos.find(x => x.id === id); if (p) { closeTrade(p, exitNow(p), 'manual'); render(); } };
+
+function checkStops(c) {
+  const sp = spread();
+  for (const p of pos.slice()) {
+    if (p.type === 'buy') {
+      if (p.sl && c.l <= p.sl) closeTrade(p, p.sl, 'SL');
+      else if (p.tp && c.h >= p.tp) closeTrade(p, p.tp, 'TP');
+    } else {
+      if (p.sl && c.h + sp >= p.sl) closeTrade(p, p.sl, 'SL');
+      else if (p.tp && c.l + sp <= p.tp) closeTrade(p, p.tp, 'TP');
+    }
+  }
+}
+$('buy').onclick = () => openTrade('buy');
+$('sell').onclick = () => openTrade('sell');
+
+// ---------- UI ----------
+const fmtT = t => new Date(t * 1000).toISOString().replace('T', ' ').slice(0, 16);
+const cls = v => v >= 0 ? 'pos' : 'neg';
+
+function render() {
+  if (!data.length) return;
+  const c = data[i], bid = c.c, ask = bid + spread();
+  $('info').innerHTML = `<b>${fmtT(c.t)}</b> &nbsp; Bid <b>${bid.toFixed(digits)}</b> &nbsp; Ask <b>${ask.toFixed(digits)}</b> &nbsp; (${i + 1}/${data.length})`;
+
+  let floating = 0;
+  let rows = '<tr><th>#</th><th>نوع</th><th>Lot</th><th>ورود</th><th>SL</th><th>TP</th><th>سود/زیان</th><th></th></tr>';
+  for (const p of pos) {
+    const pl = profitOf(p, exitNow(p)); floating += pl;
+    rows += `<tr><td>${p.id}</td><td>${p.type.toUpperCase()}</td><td>${p.lot}</td><td>${p.price.toFixed(digits)}</td><td>${p.sl || '-'}</td><td>${p.tp || '-'}</td><td class="${cls(pl)}">${pl.toFixed(2)}</td><td><button class="small" onclick="closeById(${p.id})">بستن</button></td></tr>`;
+  }
+  $('tpos').innerHTML = rows;
+
+  let h = '<tr><th>#</th><th>نوع</th><th>Lot</th><th>ورود</th><th>خروج</th><th>علت</th><th>سود/زیان</th><th>زمان بسته شدن</th></tr>';
+  for (const t of hist.slice(-50).reverse())
+    h += `<tr><td>${t.id}</td><td>${t.type.toUpperCase()}</td><td>${t.lot}</td><td>${t.price.toFixed(digits)}</td><td>${(+t.exit).toFixed(digits)}</td><td>${t.reason}</td><td class="${cls(t.profit)}">${t.profit.toFixed(2)}</td><td>${fmtT(t.ct)}</td></tr>`;
+  $('thist').innerHTML = h;
+
+  const wins = hist.filter(t => t.profit > 0), losses = hist.filter(t => t.profit <= 0);
+  const gp = wins.reduce((s, t) => s + t.profit, 0), gl = Math.abs(losses.reduce((s, t) => s + t.profit, 0));
+  let b = INITIAL, peak = INITIAL, dd = 0;
+  for (const t of hist) { b += t.profit; peak = Math.max(peak, b); dd = Math.max(dd, peak - b); }
+  const row = (k, v) => `<div><span>${k}</span><span>${v}</span></div>`;
+  $('stats').innerHTML =
+    row('Balance', balance.toFixed(2)) +
+    row('Equity', (balance + floating).toFixed(2)) +
+    row('تعداد معاملات', hist.length) +
+    row('Win rate', hist.length ? (wins.length / hist.length * 100).toFixed(1) + '%' : '-') +
+    row('Profit factor', gl ? (gp / gl).toFixed(2) : (gp ? '∞' : '-')) +
+    row('Max drawdown', dd.toFixed(2));
+}
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
