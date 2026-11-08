@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FX Replay</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#131a26">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bar:#131a26;--bg:#051b2c;--line:#222c3b;--tx:#e6ebf2;--mu:#8a96a8;--bl:#2f7ed8;--rd:#d9453f;--gr:#34d34a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bar);color:var(--tx);font:14px Tahoma,sans-serif;overflow:hidden}
+#app{height:100dvh;max-width:640px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top)}
+button,input{font:inherit;color:inherit}
+#top{display:flex;align-items:center;justify-content:space-between;background:var(--bar);padding:0 6px;height:50px;flex:none}
+#top button{background:none;border:0;min-width:52px;height:44px;font-size:17px;font-weight:bold}
+#tb{display:flex;flex:none;height:58px}
+.pb{flex:1;border:0;color:#fff;text-align:center;line-height:1.15;font-size:12px}
+.pb b{font-size:22px;font-weight:600;display:block}.pb sup{font-size:13px}
+#sell{background:var(--rd)}#buy{background:var(--bl)}
+#lotbox{display:flex;align-items:center;width:40%;background:#0d121b}
+#lotbox button{flex:none;width:38px;height:100%;background:none;border:0;font-size:22px}
+#lot{flex:1;min-width:0;width:100%;background:none;border:0;text-align:center;font-size:18px}
+#pane{flex:1;min-height:0;position:relative}
+.p{position:absolute;inset:0;overflow:auto;display:none}.p.on{display:block}
+#chart{position:absolute;inset:0;touch-action:none}
+#eb{position:absolute;bottom:14px;left:0;right:0;z-index:4;display:none;justify-content:center;gap:10px}
+#eb button{border:0;border-radius:22px;padding:11px 20px;font-size:15px;background:var(--bl);color:#fff}
+#eb .g{background:#1c2636}
+#dc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#cb{position:absolute;bottom:14px;left:0;right:0;z-index:4;display:none;justify-content:center}
+#cb button{border:0;border-radius:22px;padding:11px 20px;font-size:15px;background:#1c2636;color:#fff}
+.sh{max-height:85vh;overflow:auto}
+.sh select{width:100%;background:#0d121b;border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;font-size:16px;color:var(--tx)}
+.sh input[type=color]{height:44px;padding:2px}
+#ringwrap{position:absolute;inset:0;z-index:6;display:none}
+#rb{position:absolute;inset:0}
+#rg{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,transparent 0 78px,#2b3442ee 79px)}
+.ri{position:absolute;width:48px;height:48px;border-radius:50%;border:0;background:none;color:#fff;font-size:15px;font-weight:bold}
+.ri.on{color:#4c9bff}
+#toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:#000b;padding:8px 14px;border-radius:16px;z-index:7;display:none;font-size:13px;direction:rtl;white-space:nowrap}
+#ov{position:absolute;top:8px;left:10px;z-index:3;pointer-events:none;direction:ltr;line-height:1.5}
+#ov b{color:#4c9bff;font-size:16px}#ov span{color:var(--mu);font-size:12px;display:block}
+#nav{display:flex;flex:none;background:var(--bar);padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--line)}
+#nav button{flex:1;background:none;border:0;color:var(--mu);padding:7px 0 6px;font-size:11px}
+#nav button.on{color:#4c9bff}
+#nav svg{width:24px;height:24px;display:block;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.box{padding:12px;direction:rtl}
+.box h4{margin:16px 0 8px;color:var(--mu);font-weight:normal;font-size:13px}
+.box input,.sh input{width:100%;background:#0d121b;border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;font-size:16px}
+.btn{width:100%;padding:12px;border:0;border-radius:6px;background:var(--bl);color:#fff;margin-bottom:8px;font-size:15px}
+.btn.g{background:#1c2636}.btn.r{background:var(--rd)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);direction:ltr}
+.row small{color:var(--mu);display:block}
+.pos{color:var(--gr)}.neg{color:var(--rd)}.buyc{color:#4c9bff}.sellc{color:var(--rd)}
+#sheetbg{position:fixed;inset:0;background:#0009;z-index:9;display:none;align-items:flex-end;justify-content:center}
+.sh{width:100%;max-width:640px;background:var(--bar);border-radius:14px 14px 0 0;padding:14px;direction:rtl;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.sh .it{display:block;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:13px;text-align:center;font-size:16px}
+.lbl{color:var(--mu);font-size:12px;margin:4px 0 6px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <button id="play">▶</button><button id="step">⏭</button><button id="tfb">M1</button><button id="spd">×3</button>
+  </div>
+  <div id="tb">
+    <button class="pb" id="sell">SELL<b>—</b></button>
+    <div id="lotbox"><button id="lm">−</button><input id="lot" type="number" step="0.01" min="0.01" value="0.10" inputmode="decimal"><button id="lp">+</button></div>
+    <button class="pb" id="buy">BUY<b>—</b></button>
+  </div>
+  <div id="pane">
+    <div class="p on" id="pc"><div id="ov"><b id="sym">FX Replay</b><span id="tm">داده‌ای بارگذاری نشده</span></div><div id="chart"></div>
+    <canvas id="dc"></canvas>
+    <div id="cb"><button id="cancel">✕ لغو رسم</button></div>
+    <div id="ringwrap"></div><div id="toast"></div>
+    <div id="eb"><button id="ok">✓ تایید SL/TP</button><button class="g" id="no">بدون SL/TP</button></div></div>
+    <div class="p" id="pt"></div>
+    <div class="p" id="ph"></div>
+    <div class="p box" id="ps">
+      <h4>داده</h4>
+      <input type="file" id="file" accept=".csv,.txt">
+      <button class="btn g" id="demo">ساخت داده تستی</button>
+      <h4>شروع ری‌پلی از تاریخ</h4>
+      <input type="datetime-local" id="start">
+      <button class="btn" id="go">شروع از این تاریخ</button>
+      <h4>حساب و بازار</h4>
+      <div class="lbl">بالانس اولیه</div><input id="init" type="number" value="10000">
+      <div class="lbl">Spread (به قیمت؛ برای طلا حدود 0.30)</div><input id="spread" type="number" step="any" value="0.0001">
+      <div class="lbl">Contract size (فارکس 100000، طلا 100)</div><input id="contract" type="number" step="any" value="100000">
+      <button class="btn g" id="reset">ریست حساب و معاملات</button>
+      <div class="lbl" id="msg">فایل CSV بده (خروجی MT4/MT5، ترجیحاً M1) یا داده تستی بساز.</div>
+    </div>
+  </div>
+  <div id="nav">
+    <button class="on" data-t="pc"><svg viewBox="0 0 24 24"><path d="M7 4v3M7 17v3M17 3v4M17 15v5"/><rect x="4.5" y="7" width="5" height="10" rx="1"/><rect x="14.5" y="7" width="5" height="8" rx="1"/></svg>نمودارها</button>
+    <button data-t="pt"><svg viewBox="0 0 24 24"><path d="M8 20V5M8 5l-4 4M8 5l4 4M16 4v15M16 19l-4-4M16 19l4-4"/></svg><span id="eq">معامله</span></button>
+    <button data-t="ph"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>تاریخچه</button>
+    <button data-t="ps"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>تنظیمات</button>
+  </div>
+</div>
+<div id="sheetbg"><div class="sh" id="sh"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const SPEEDS = [1, 3, 10, 30, 100, 300];
+let data = [], i = 0, tf = 1, timer = null, acc = 0, bars = [], digits = 5, sym = 'DEMO', tab = 'pc';
+let initial = 10000, balance = 10000, pos = [], hist = [], nid = 1, speed = 3, bidL = null, askL = null;
+let edit = null, lineObjs = [], lastSig = '', slL = null, tpL = null, drag = null;
+
+const chart = LightweightCharts.createChart($('chart'), {
+  layout: { background: { color: '#051b2c' }, textColor: '#c8d0da' },
+  grid: { vertLines: { visible: false }, horzLines: { color: '#0c2a40' } },
+  rightPriceScale: { borderColor: '#222c3b' },
+  timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#222c3b', rightOffset: 8 },
+  autoSize: true
+});
+const series = chart.addCandlestickSeries({
+  upColor: '#34d34a', downColor: '#f5a30d', borderVisible: false,
+  wickUpColor: '#34d34a', wickDownColor: '#f5a30d', lastValueVisible: false, priceLineVisible: false
+});
+
+const tfName = m => m < 60 ? 'M' + m : m < 1440 ? 'H' + m / 60 : m === 1440 ? 'D1' : m === 10080 ? 'W1' : 'MN';
+const fmtT = t => new Date(t * 1000).toISOString().replace('T', ' ').slice(0, 16);
+const cls = v => v >= 0 ? 'pos' : 'neg';
+const spread = () => +$('spread').value || 0;
+const contract = () => +$('contract').value || 100000;
+
+// ---------- Data ----------
+function parseCSV(text) {
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split(/[,;\t]/);
+    if (p.length < 5) continue;
+    const m = p[0].match(/^(\d{4})[.\-\/](\d{2})[.\-\/](\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+    if (!m) continue;
+    let h = m[4], mi = m[5], k = 1;
+    if (h === undefined) {
+      const tm = p[1].match(/^(\d{2}):(\d{2})/);
+      if (tm) { h = tm[1]; mi = tm[2]; k = 2; } else { h = 0; mi = 0; }
+    }
+    const t = Date.UTC(+m[1], +m[2] - 1, +m[3], +h, +mi) / 1000;
+    const v = p.slice(k, k + 4).map(Number);
+    if (v.some(isNaN)) continue;
+    out.push({ t, o: v[0], h: v[1], l: v[2], c: v[3] });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+function load(arr, name) {
+  if (arr.length < 10) { $('msg').textContent = 'داده‌ای پیدا نشد. فرمت فایل رو چک کن.'; return; }
+  pause();
+  data = arr;
+  sym = (name ? name.replace(/\.[^.]+$/, '').replace(/[_\-\s]?(M|H|D)\d+.*$/i, '').toUpperCase() : 'DEMO').slice(0, 12) || 'DATA';
+  loadDraw();
+  resetAccount();
+  digits = Math.min(5, Math.max(2, (String(data[0].c).split('.')[1] || '').length));
+  series.applyOptions({ priceFormat: { type: 'price', precision: digits, minMove: Math.pow(10, -digits) } });
+  $('start').value = new Date(data[0].t * 1000).toISOString().slice(0, 16);
+  i = Math.min(300, data.length - 1);
+  rebuild();
+  $('msg').textContent = data.length + ' کندل بارگذاری شد.';
+  goTab('pc');
+}
+
+$('file').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => load(parseCSV(r.result), f.name);
+  r.readAsText(f);
+};
+
+$('demo').onclick = () => {
+  let t = Date.UTC(2024, 0, 1) / 1000, p = 1.1, out = [];
+  for (let k = 0; k < 60000; k++) {
+    const o = p; let c = o, h = o, l = o;
+    for (let j = 0; j < 4; j++) { c += (Math.random() - 0.5) * 0.0004; h = Math.max(h, c); l = Math.min(l, c); }
+    out.push({ t, o: +o.toFixed(5), h: +h.toFixed(5), l: +l.toFixed(5), c: +c.toFixed(5) });
+    p = c; t += 60;
+  }
+  load(out, '');
+};
+
+// ---------- Replay ----------
+function bucket(t) {
+  if (tf === 10080) return Math.floor((t - 345600) / 604800) * 604800 + 345600;
+  if (tf === 43200) { const d = new Date(t * 1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) / 1000; }
+  const sec = tf * 60; return Math.floor(t / sec) * sec;
+}
+function addToBars(c) {
+  const b = bucket(c.t), last = bars[bars.length - 1];
+  if (last && last.time === b) {
+    last.high = Math.max(last.high, c.h); last.low = Math.min(last.low, c.l); last.close = c.c;
+  } else bars.push({ time: b, open: c.o, high: c.h, low: c.l, close: c.c });
+  return bars[bars.length - 1];
+}
+function rebuild() {
+  bars = [];
+  for (let k = Math.max(0, i - tf * 3000); k <= i; k++) addToBars(data[k]);
+  series.setData(bars);
+  if (maS) calcMA();
+  render();
+}
+function stepN(n) {
+  for (let s = 0; s < n; s++) {
+    if (i >= data.length - 1) { pause(); break; }
+    i++;
+    series.update(addToBars(data[i]));
+    if (maS) updMA();
+    checkStops(data[i]);
+  }
+  render();
+}
+function play() {
+  if (!data.length || timer) return;
+  $('play').textContent = '⏸';
+  timer = setInterval(() => {
+    acc += speed / 20;
+    const n = Math.floor(acc); acc -= n;
+    if (n > 0) stepN(n);
+  }, 50);
+}
+function pause() {
+  if (timer) { clearInterval(timer); timer = null; }
+  $('play').textContent = '▶';
+}
+$('play').onclick = () => timer ? pause() : play();
+$('step').onclick = () => { if (data.length) stepN(1); };
+$('spd').onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; $('spd').textContent = '×' + speed; };
+$('tfb').onclick = () => sheet([1, 5, 15, 30, 60, 240, 1440, 10080, 43200].map(m => `<button class="it" onclick="setTF(${m})">${tfName(m)}</button>`).join(''));
+window.setTF = m => { tf = m; $('tfb').textContent = tfName(m); if (data.length) rebuild(); hideSheet(); };
+$('go').onclick = () => {
+  if (!data.length || !$('start').value) return;
+  pause();
+  const t = Date.parse($('start').value + ':00Z') / 1000;
+  const idx = data.findIndex(c => c.t >= t);
+  i = idx < 0 ? data.length - 1 : idx;
+  rebuild(); goTab('pc');
+};
+
+// ---------- Trading ----------
+const profitOf = (p, exit) => (p.type === 'buy' ? exit - p.price : p.price - exit) * p.lot * contract();
+const exitNow = p => p.type === 'buy' ? data[i].c : data[i].c + spread();
+
+function openTrade(type) {
+  if (!data.length) return;
+  const lot = +$('lot').value;
+  if (!(lot > 0)) return;
+  const bid = data[i].c;
+  pos.push({ id: nid++, type, lot, price: type === 'buy' ? bid + spread() : bid, sl: 0, tp: 0, t: data[i].t });
+  startEdit(pos[pos.length - 1]);
+  render();
+}
+function closeTrade(p, exit, reason) {
+  const profit = profitOf(p, exit);
+  balance += profit;
+  hist.push({ ...p, exit, profit, ct: data[i].t, reason });
+  pos = pos.filter(x => x !== p);
+}
+function checkStops(c) {
+  const sp = spread();
+  for (const p of pos.slice()) {
+    if (p.type === 'buy') {
+      if (p.sl && c.l <= p.sl) closeTrade(p, p.sl, 'SL');
+      else if (p.tp && c.h >= p.tp) closeTrade(p, p.tp, 'TP');
+    } else {
+      if (p.sl && c.h + sp >= p.sl) closeTrade(p, p.sl, 'SL');
+      else if (p.tp && c.l + sp <= p.tp) closeTrade(p, p.tp, 'TP');
+    }
+  }
+}
+function resetAccount() {
+  initial = +$('init').value || 10000; balance = initial; pos = []; hist = []; nid = 1; edit = null;
+  if (data.length) render();
+}
+$('reset').onclick = resetAccount;
+$('buy').onclick = () => openTrade('buy');
+$('sell').onclick = () => openTrade('sell');
+const setLot = d => { $('lot').value = Math.max(0.01, +(+$('lot').value + d).toFixed(2)).toFixed(2); };
+$('lm').onclick = () => setLot(-0.01);
+$('lp').onclick = () => setLot(0.01);
+
+// ---------- Sheets ----------
+function sheet(h) { $('sh').innerHTML = h; $('sheetbg').style.display = 'flex'; }
+function hideSheet() { $('sheetbg').style.display = 'none'; sel = null; if (typeof draw === 'function') draw(); }
+$('sheetbg').onclick = e => { if (e.target.id === 'sheetbg') hideSheet(); };
+window.posSheet = id => {
+  const p = pos.find(x => x.id === id); if (!p) return;
+  sheet(`<div class="lbl">${sym} ${p.type} ${p.lot} @ ${p.price.toFixed(digits)}</div>
+  <input id="e_sl" type="number" step="any" placeholder="Stop Loss" value="${p.sl || ''}">
+  <input id="e_tp" type="number" step="any" placeholder="Take Profit" value="${p.tp || ''}">
+  <button class="btn g" onclick="editOnChart(${id})">ویرایش روی چارت</button>
+  <button class="btn" onclick="saveP(${id})">ذخیره SL/TP</button>
+  <button class="btn r" onclick="closeById(${id})">بستن معامله</button>`);
+};
+window.saveP = id => { const p = pos.find(x => x.id === id); if (p) { p.sl = +$('e_sl').value || 0; p.tp = +$('e_tp').value || 0; } hideSheet(); render(); };
+window.closeById = id => { const p = pos.find(x => x.id === id); if (p) closeTrade(p, exitNow(p), 'manual'); hideSheet(); render(); };
+
+// ---------- SL/TP lines on chart (drag with finger) ----------
+function calcDist() {
+  const n = Math.min(50, bars.length); let t = 0;
+  for (let k = bars.length - n; k < bars.length; k++) t += bars[k].high - bars[k].low;
+  return Math.max(n ? t / n * 3 : 0, Math.pow(10, -digits) * 20);
+}
+function startEdit(p) {
+  pause();
+  const d = calcDist(), b = p.type === 'buy';
+  edit = {
+    id: p.id,
+    sl: p.sl || +(b ? p.price - d : p.price + d).toFixed(digits),
+    tp: p.tp || +(b ? p.price + d * 1.5 : p.price - d * 1.5).toFixed(digits)
+  };
+  goTab('pc');
+}
+window.editOnChart = id => { const p = pos.find(x => x.id === id); if (!p) return; hideSheet(); startEdit(p); };
+function drawLines() {
+  if (edit && !pos.find(p => p.id === edit.id)) edit = null;
+  $('eb').style.display = edit ? 'flex' : 'none';
+  const sig = pos.map(p => [p.id, p.sl, p.tp].join(':')).join(',') + '|' + (edit ? edit.id : '');
+  if (sig === lastSig) return;
+  lastSig = sig;
+  lineObjs.forEach(l => series.removePriceLine(l)); lineObjs = [];
+  const LS = LightweightCharts.LineStyle;
+  const mk = (price, color, w, st, title) => series.createPriceLine({ price, color, lineWidth: w, lineStyle: st, axisLabelVisible: true, title });
+  for (const p of pos) {
+    lineObjs.push(mk(p.price, p.type === 'buy' ? '#4c9bff' : '#d9453f', 1, LS.Dotted, p.type + ' ' + p.lot));
+    if (edit && edit.id === p.id) continue;
+    if (p.sl) lineObjs.push(mk(p.sl, '#ff5252', 1, LS.Dashed, 'SL'));
+    if (p.tp) lineObjs.push(mk(p.tp, '#34d34a', 1, LS.Dashed, 'TP'));
+  }
+  if (edit) {
+    slL = mk(edit.sl, '#ff5252', 2, LS.Dashed, 'SL');
+    tpL = mk(edit.tp, '#34d34a', 2, LS.Dashed, 'TP');
+    lineObjs.push(slL, tpL);
+  }
+}
+const chEl = $('chart');
+const evY = e => { const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e; return t.clientY - chEl.getBoundingClientRect().top; };
+function dragStart(e) {
+  if (!edit) return;
+  const y = evY(e); let best = null, bd = 30;
+  for (const k of ['sl', 'tp']) {
+    const c = series.priceToCoordinate(edit[k]);
+    if (c != null && Math.abs(c - y) < bd) { bd = Math.abs(c - y); best = k; }
+  }
+  if (best) { drag = best; e.stopPropagation(); e.preventDefault(); }
+}
+function dragMove(e) {
+  if (!drag) return;
+  e.stopPropagation(); e.preventDefault();
+  const pr = series.coordinateToPrice(evY(e));
+  if (pr != null) { edit[drag] = +pr.toFixed(digits); slL.applyOptions({ price: edit.sl }); tpL.applyOptions({ price: edit.tp }); }
+}
+function dragEnd(e) { if (drag) { drag = null; e.stopPropagation(); } }
+const OPT = { capture: true, passive: false };
+['touchstart', 'mousedown'].forEach(n => chEl.addEventListener(n, dragStart, OPT));
+['touchmove', 'mousemove'].forEach(n => chEl.addEventListener(n, dragMove, OPT));
+['touchend', 'touchcancel', 'mouseup'].forEach(n => chEl.addEventListener(n, dragEnd, OPT));
+
+$('ok').onclick = () => {
+  const p = pos.find(x => x.id === edit.id);
+  if (!p) { edit = null; render(); return; }
+  const b = p.type === 'buy';
+  const wrongSide = (edit.sl && (b ? edit.sl >= p.price : edit.sl <= p.price)) || (edit.tp && (b ? edit.tp <= p.price : edit.tp >= p.price));
+  if (wrongSide) { alert('برای Buy: SL پایین و TP بالای قیمت ورود باشه. برای Sell برعکس.'); return; }
+  p.sl = edit.sl; p.tp = edit.tp; edit = null; render();
+};
+$('no').onclick = () => { const p = pos.find(x => x.id === edit.id); if (p) { p.sl = 0; p.tp = 0; } edit = null; render(); };
+
+// ---------- Tap-wheel menu, indicator, horizontal lines ----------
+const RING = [['M1', 1], ['M5', 5], ['M15', 15], ['M30', 30], ['H1', 60], ['H4', 240], ['D1', 1440], ['W1', 10080], ['MN', 43200], ['ƒ', 'ind'], ['✎', 'tool'], ['⚙', 'set']];
+let maS = null, maP = 20, tp = null, lastTouch = 0;
+function toast(m) { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', 2500); }
+function openRing(x, y) {
+  const pc = $('pc'), w = pc.clientWidth, h = pc.clientHeight;
+  const cx = Math.max(160, Math.min(w - 160, x)), cy = Math.max(160, Math.min(h - 160, y));
+  let html = `<div id="rb" onclick="closeRing()"></div><div id="rg" style="left:${cx - 150}px;top:${cy - 150}px">`;
+  RING.forEach((it, k) => {
+    const a = (-150 + 30 * k) * Math.PI / 180;
+    const px = 150 + 108 * Math.sin(a) - 24, py = 150 - 108 * Math.cos(a) - 24;
+    html += `<button class="ri${it[1] === tf ? ' on' : ''}" style="left:${px}px;top:${py}px" onclick="ringPick(${k})">${it[0]}</button>`;
+  });
+  $('ringwrap').innerHTML = html + '</div>';
+  $('ringwrap').style.display = 'block';
+}
+function closeRing() { $('ringwrap').style.display = 'none'; $('ringwrap').innerHTML = ''; }
+function ringPick(k) {
+  const v = RING[k][1]; closeRing();
+  if (typeof v === 'number') setTF(v);
+  else if (v === 'ind') sheet(`<div class="lbl">میانگین متحرک (SMA) روی چارت</div>
+    <input id="ma_p" type="number" value="${maP}"><button class="btn" onclick="setMA()">اعمال</button><button class="btn g" onclick="clearMA()">حذف اندیکاتور</button>`);
+  else if (v === 'tool') toolsSheet();
+  else goTab('ps');
+}
+function calcMA() {
+  const out = []; let sum = 0;
+  for (let k = 0; k < bars.length; k++) {
+    sum += bars[k].close; if (k >= maP) sum -= bars[k - maP].close;
+    if (k >= maP - 1) out.push({ time: bars[k].time, value: sum / maP });
+  }
+  maS.setData(out);
+}
+function updMA() {
+  const n = bars.length; if (n < maP) return;
+  let s2 = 0; for (let k = n - maP; k < n; k++) s2 += bars[k].close;
+  maS.update({ time: bars[n - 1].time, value: s2 / maP });
+}
+window.setMA = () => {
+  maP = Math.max(2, Math.floor(+$('ma_p').value || 20));
+  if (!maS) maS = chart.addLineSeries({ color: '#4c9bff', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  if (bars.length) calcMA();
+  hideSheet();
+};
+window.clearMA = () => { if (maS) { chart.removeSeries(maS); maS = null; } hideSheet(); };
+
+function tapStart(x, y) { tp = { x, y, t: Date.now() }; }
+function tapEnd(x, y) {
+  if (!tp) return;
+  const d = Math.hypot(x - tp.x, y - tp.y), dt = Date.now() - tp.t; tp = null;
+  if (d > 10 || dt > 350 || edit || drag || !data.length) return;
+  const r = chEl.getBoundingClientRect();
+  if (placing(x - r.left, y - r.top)) return;
+  openRing(x - r.left, y - r.top);
+}
+chEl.addEventListener('touchstart', e => { lastTouch = Date.now(); if (e.touches.length > 1) { tp = null; return; } tapStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+chEl.addEventListener('touchend', e => { lastTouch = Date.now(); const t = e.changedTouches[0]; tapEnd(t.clientX, t.clientY); });
+chEl.addEventListener('mousedown', e => { if (Date.now() - lastTouch > 700) tapStart(e.clientX, e.clientY); });
+chEl.addEventListener('mouseup', e => { if (Date.now() - lastTouch > 700) tapEnd(e.clientX, e.clientY); });
+
+// ---------- Drawing tools (horizontal, vertical, trendline, fib) ----------
+let drawMode = null, pend = null, drawings = [], sel = null, dw = null, dseq = 1;
+const DEF = {
+  h: { color: '#e0c050', width: 1, style: 0 },
+  v: { color: '#e0c050', width: 1, style: 0 },
+  t: { color: '#4c9bff', width: 2, style: 0, ext: false },
+  f: { color: '#e0c050', width: 1, style: 0, ext: true, levels: '0,0.236,0.382,0.5,0.618,0.786,1' }
+};
+const evX = e => { const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e; return t.clientX - chEl.getBoundingClientRect().left; };
+const tsec = () => tf * 60;
+function t2l(t) {
+  const n = bars.length; if (!n) return null;
+  const f = bars[0].time, l = bars[n - 1].time;
+  if (t <= f) return (t - f) / tsec();
+  if (t >= l) return n - 1 + (t - l) / tsec();
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (bars[m].time <= t) lo = m; else hi = m; }
+  return lo + (t - bars[lo].time) / (bars[hi].time - bars[lo].time);
+}
+function l2t(l) {
+  const n = bars.length;
+  if (l <= 0) return bars[0].time + l * tsec();
+  if (l >= n - 1) return bars[n - 1].time + (l - (n - 1)) * tsec();
+  const k = Math.floor(l); return bars[k].time + (l - k) * (bars[k + 1].time - bars[k].time);
+}
+const X = t => { const l = t2l(t); return l == null ? null : chart.timeScale().logicalToCoordinate(l); };
+const Y = p => series.priceToCoordinate(p);
+const levelsOf = d => String(d.levels || '').split(',').map(Number).filter(v => !isNaN(v));
+const extPt = (d, x1, y1, x2, y2, pw) => { if (!d.ext || x1 === x2) return [x2, y2]; const tx = x2 > x1 ? pw : 0; return [tx, y1 + (y2 - y1) / (x2 - x1) * (tx - x1)]; };
+
+function saveDraw() { try { localStorage.setItem('fxr_draw_' + sym, JSON.stringify(drawings)); } catch (e) {} }
+function loadDraw() {
+  try { drawings = JSON.parse(localStorage.getItem('fxr_draw_' + sym) || '[]'); } catch (e) { drawings = []; }
+  dseq = drawings.reduce((m, d) => Math.max(m, d.id || 0), 0) + 1;
+}
+function showCb() { $('cb').style.display = drawMode ? 'flex' : 'none'; }
+$('cancel').onclick = () => { drawMode = null; pend = null; showCb(); draw(); };
+
+function toolsSheet() {
+  sheet(`<button class="it" onclick="startDraw('h')">خط افقی</button>
+    <button class="it" onclick="startDraw('v')">خط عمودی</button>
+    <button class="it" onclick="startDraw('t')">خط روند</button>
+    <button class="it" onclick="startDraw('f')">فیبوناچی اصلاحی</button>
+    <button class="it" style="color:var(--rd)" onclick="clearDraw()">حذف همه ابزارها</button>`);
+}
+window.startDraw = k => {
+  hideSheet(); drawMode = k; pend = null; showCb();
+  toast({ h: 'روی چارت بزن', v: 'روی چارت بزن', t: 'نقطه اول رو بزن', f: 'نقطه اول (شروع حرکت) رو بزن' }[k]);
+};
+window.clearDraw = () => { drawings = []; saveDraw(); hideSheet(); draw(); };
+window.delDraw = id => { drawings = drawings.filter(x => x.id !== id); saveDraw(); hideSheet(); draw(); };
+window.saveDraws = id => {
+  const d = drawings.find(x => x.id === id); if (!d) return;
+  d.color = $('s_col').value; d.width = +$('s_w').value; d.style = +$('s_st').value;
+  if ($('s_pr')) { const v = +$('s_pr').value; if (v) d.price = v; }
+  if ($('s_ext')) d.ext = $('s_ext').checked;
+  if ($('s_lv')) d.levels = $('s_lv').value;
+  saveDraw(); hideSheet();
+};
+window.drawSheet = d => {
+  sel = d; draw();
+  const name = { h: 'خط افقی', v: 'خط عمودی', t: 'خط روند', f: 'فیبوناچی اصلاحی' }[d.type];
+  const opt = (v, t) => `<option value="${v}"${d.style === v ? ' selected' : ''}>${t}</option>`;
+  sheet(`<div class="lbl">${name}</div>
+    <div class="lbl">رنگ</div><input id="s_col" type="color" value="${d.color}">
+    <div class="lbl">ضخامت</div><select id="s_w">${[1, 2, 3, 4].map(v => `<option${v === d.width ? ' selected' : ''}>${v}</option>`).join('')}</select>
+    <div class="lbl">سبک خط</div><select id="s_st">${opt(0, 'ساده')}${opt(1, 'خط‌چین')}${opt(2, 'نقطه‌چین')}</select>
+    ${d.type === 'h' ? `<div class="lbl">قیمت</div><input id="s_pr" type="number" step="any" value="${d.price}">` : ''}
+    ${d.type === 't' || d.type === 'f' ? `<label class="lbl" style="display:block"><input id="s_ext" type="checkbox" style="width:auto;margin:0 0 0 8px" ${d.ext ? 'checked' : ''}>امتداد تا لبه‌ی راست</label>` : ''}
+    ${d.type === 'f' ? `<div class="lbl">سطح‌ها (با کاما)</div><input id="s_lv" value="${d.levels}">` : ''}
+    <button class="btn" onclick="saveDraws(${d.id})">ذخیره</button>
+    <button class="btn r" onclick="delDraw(${d.id})">حذف ابزار</button>`);
+};
+
+function placing(x, y) {
+  if (!drawMode) return false;
+  const l = chart.timeScale().coordinateToLogical(x), pr = series.coordinateToPrice(y);
+  if (l == null || pr == null) return true;
+  const t = Math.round(l2t(l)), p = +pr.toFixed(digits);
+  const add = o => { o.id = dseq++; drawings.push(o); saveDraw(); drawMode = null; pend = null; showCb(); draw(); };
+  if (drawMode === 'h' || drawMode === 'v') add(Object.assign({ type: drawMode, t, price: p }, DEF[drawMode]));
+  else if (!pend) { pend = { t, p }; toast('نقطه دوم رو بزن'); }
+  else add(Object.assign({ type: drawMode, t1: pend.t, p1: pend.p, t2: t, p2: p }, DEF[drawMode]));
+  return true;
+}
+
+function segDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy;
+  let t = L ? ((px - x1) * dx + (py - y1) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+function hitOne(d, x, y) {
+  const pw = chart.timeScale().width();
+  if (d.type === 'h') { const yy = Y(d.price); return yy != null && Math.abs(yy - y) < 16 ? 'body' : null; }
+  if (d.type === 'v') { const xx = X(d.t); return xx != null && Math.abs(xx - x) < 16 ? 'body' : null; }
+  const x1 = X(d.t1), y1 = Y(d.p1), x2 = X(d.t2), y2 = Y(d.p2);
+  if ([x1, y1, x2, y2].some(v => v == null)) return null;
+  if (Math.hypot(x - x1, y - y1) < 22) return 'p1';
+  if (Math.hypot(x - x2, y - y2) < 22) return 'p2';
+  if (d.type === 't') { const e = extPt(d, x1, y1, x2, y2, pw); return segDist(x, y, x1, y1, e[0], e[1]) < 16 ? 'body' : null; }
+  const xl = Math.min(x1, x2), xr = d.ext ? pw : Math.max(x1, x2);
+  if (x >= xl - 8 && x <= xr + 8) for (const r of levelsOf(d)) { const yy = Y(d.p2 + (d.p1 - d.p2) * r); if (yy != null && Math.abs(yy - y) < 12) return 'body'; }
+  return segDist(x, y, x1, y1, x2, y2) < 14 ? 'body' : null;
+}
+function dwStart(e) {
+  if (drag || edit || drawMode || !bars.length || !drawings.length) return;
+  const x = evX(e), y = evY(e);
+  for (let k = drawings.length - 1; k >= 0; k--) {
+    const d = drawings[k], part = hitOne(d, x, y);
+    if (!part) continue;
+    dw = { d, part, sx: x, sy: y, moved: false, lc: chart.timeScale().coordinateToLogical(x), pc: series.coordinateToPrice(y),
+      o: JSON.parse(JSON.stringify(d)), l1: d.t1 != null ? t2l(d.t1) : 0, l2: d.t2 != null ? t2l(d.t2) : 0 };
+    sel = d; e.stopPropagation(); e.preventDefault(); return;
+  }
+}
+function dwMove(e) {
+  if (!dw) return;
+  e.stopPropagation(); e.preventDefault();
+  const x = evX(e), y = evY(e);
+  if (!dw.moved && Math.hypot(x - dw.sx, y - dw.sy) < 8) return;
+  dw.moved = true;
+  const l = chart.timeScale().coordinateToLogical(x), pr = series.coordinateToPrice(y);
+  if (l == null || pr == null) return;
+  const d = dw.d, o = dw.o, p = +pr.toFixed(digits);
+  if (d.type === 'h') d.price = p;
+  else if (d.type === 'v') d.t = Math.round(l2t(l));
+  else if (dw.part === 'p1') { d.t1 = Math.round(l2t(l)); d.p1 = p; }
+  else if (dw.part === 'p2') { d.t2 = Math.round(l2t(l)); d.p2 = p; }
+  else {
+    const dl = l - dw.lc, dp = pr - dw.pc;
+    d.t1 = Math.round(l2t(dw.l1 + dl)); d.p1 = +(o.p1 + dp).toFixed(digits);
+    d.t2 = Math.round(l2t(dw.l2 + dl)); d.p2 = +(o.p2 + dp).toFixed(digits);
+  }
+  draw();
+}
+function dwEnd(e) {
+  if (!dw) return;
+  e.stopPropagation();
+  const was = dw; dw = null;
+  if (was.moved) { saveDraw(); sel = null; draw(); } else drawSheet(was.d);
+}
+['touchstart', 'mousedown'].forEach(n => chEl.addEventListener(n, dwStart, OPT));
+['touchmove', 'mousemove'].forEach(n => chEl.addEventListener(n, dwMove, OPT));
+['touchend', 'touchcancel', 'mouseup'].forEach(n => chEl.addEventListener(n, dwEnd, OPT));
+
+function draw() {
+  const c = $('dc'), w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1;
+  if (!w) return;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  if (!bars.length) return;
+  const pw = chart.timeScale().width(), ph = h - 28;
+  g.save(); g.beginPath(); g.rect(0, 0, pw, ph); g.clip(); g.font = '11px Tahoma';
+  const line = (a, b, c2, d2) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c2, d2); g.stroke(); };
+  const dot = (x, y, col) => { g.setLineDash([]); g.beginPath(); g.arc(x, y, 7, 0, 7); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2; g.strokeStyle = col; g.stroke(); };
+  for (const d of drawings) {
+    g.strokeStyle = g.fillStyle = d.color; g.lineWidth = d.width + (d === sel ? 1 : 0);
+    g.setLineDash(d.style === 1 ? [8, 6] : d.style === 2 ? [2, 5] : []);
+    if (d.type === 'h') { const yy = Y(d.price); if (yy != null) { line(0, yy, pw, yy); g.fillText(d.price.toFixed(digits), 4, yy - 4); } }
+    else if (d.type === 'v') { const xx = X(d.t); if (xx != null) line(xx, 0, xx, ph); }
+    else {
+      const x1 = X(d.t1), y1 = Y(d.p1), x2 = X(d.t2), y2 = Y(d.p2);
+      if ([x1, y1, x2, y2].some(v => v == null)) continue;
+      if (d.type === 't') { const e = extPt(d, x1, y1, x2, y2, pw); line(x1, y1, e[0], e[1]); }
+      else {
+        const xl = Math.min(x1, x2), xr = d.ext ? pw : Math.max(x1, x2);
+        for (const r of levelsOf(d)) {
+          const lp = d.p2 + (d.p1 - d.p2) * r, yy = Y(lp);
+          if (yy == null) continue;
+          line(xl, yy, xr, yy); g.fillText(r + ' (' + lp.toFixed(digits) + ')', xl + 4, yy - 3);
+        }
+        g.globalAlpha = 0.6; g.lineWidth = 1; g.setLineDash([4, 4]); line(x1, y1, x2, y2); g.globalAlpha = 1;
+      }
+      if (d === sel) { dot(x1, y1, d.color); dot(x2, y2, d.color); }
+    }
+  }
+  if (pend) { const px = X(pend.t), py = Y(pend.p); if (px != null && py != null) dot(px, py, '#4c9bff'); }
+  g.restore();
+}
+(function loop() { if (drawings.length || pend) draw(); requestAnimationFrame(loop); })();
+
+// ---------- Tabs & render ----------
+function goTab(t) {
+  tab = t;
+  document.querySelectorAll('.p').forEach(p => p.classList.toggle('on', p.id === t));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  render();
+}
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => goTab(b.dataset.t));
+
+const pr = (l, v) => { const s = v.toFixed(digits); return `${l}<b>${s.slice(0, -1)}<sup>${s.slice(-1)}</sup></b>`; };
+
+function render() {
+  if (!data.length) return;
+  const c = data[i], bid = c.c, ask = bid + spread();
+  $('sym').textContent = sym + ', ' + tfName(tf);
+  $('tm').textContent = fmtT(c.t) + '  |  ' + (i + 1) + '/' + data.length;
+  $('sell').innerHTML = pr('SELL', bid);
+  $('buy').innerHTML = pr('BUY', ask);
+  if (!bidL) {
+    bidL = series.createPriceLine({ price: bid, color: '#4c9bff', lineWidth: 1, axisLabelVisible: true, title: '' });
+    askL = series.createPriceLine({ price: ask, color: '#1f8a9c', lineWidth: 1, axisLabelVisible: true, title: '' });
+  } else { bidL.applyOptions({ price: bid }); askL.applyOptions({ price: ask }); }
+  drawLines();
+  const fl = pos.reduce((s, p) => s + profitOf(p, exitNow(p)), 0);
+  $('eq').textContent = (balance + fl).toFixed(2);
+  if (tab === 'pt') renderTrade(fl);
+  if (tab === 'ph') renderHist();
+}
+
+function renderTrade(fl) {
+  let rows = '';
+  for (const p of pos) {
+    const pl = profitOf(p, exitNow(p));
+    rows += `<div class="row" onclick="posSheet(${p.id})"><div><b>${sym}</b>, <span class="${p.type === 'buy' ? 'buyc' : 'sellc'}">${p.type} ${p.lot}</span><small>${p.price.toFixed(digits)} → ${exitNow(p).toFixed(digits)}</small></div><b class="${cls(pl)}">${pl.toFixed(2)}</b></div>`;
+  }
+  $('pt').innerHTML = `<div class="row"><span>Balance</span><b>${balance.toFixed(2)}</b></div>
+    <div class="row"><span>Equity</span><b>${(balance + fl).toFixed(2)}</b></div>
+    <div class="row"><span>Profit</span><b class="${cls(fl)}">${fl.toFixed(2)}</b></div>` +
+    (rows || '<div class="row"><small style="direction:rtl">معامله‌ی بازی نداری</small></div>');
+}
+
+function renderHist() {
+  const wins = hist.filter(t => t.profit > 0), losses = hist.filter(t => t.profit <= 0);
+  const gp = wins.reduce((s, t) => s + t.profit, 0), gl = Math.abs(losses.reduce((s, t) => s + t.profit, 0));
+  let b = initial, peak = initial, dd = 0;
+  for (const t of hist) { b += t.profit; peak = Math.max(peak, b); dd = Math.max(dd, peak - b); }
+  const st = (k, v) => `<div class="row"><span>${k}</span><b>${v}</b></div>`;
+  let h = st('Trades', hist.length) + st('Win rate', hist.length ? (wins.length / hist.length * 100).toFixed(1) + '%' : '-') +
+    st('Profit factor', gl ? (gp / gl).toFixed(2) : (gp ? '∞' : '-')) + st('Max drawdown', dd.toFixed(2));
+  for (const t of hist.slice(-100).reverse())
+    h += `<div class="row"><div><b>${sym}</b>, <span class="${t.type === 'buy' ? 'buyc' : 'sellc'}">${t.type} ${t.lot}</span><small>${t.price.toFixed(digits)} → ${(+t.exit).toFixed(digits)} · ${t.reason}</small></div><b class="${cls(t.profit)}">${t.profit.toFixed(2)}</b></div>`;
+  $('ph').innerHTML = h;
+}
+
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
