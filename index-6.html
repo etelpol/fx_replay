@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FX Replay</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#131a26">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bar:#131a26;--bg:#051b2c;--line:#222c3b;--tx:#e6ebf2;--mu:#8a96a8;--bl:#2f7ed8;--rd:#d9453f;--gr:#34d34a;--dir:rtl}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bar);color:var(--tx);font:14px Tahoma,sans-serif;overflow:hidden}
+#app{height:100dvh;max-width:640px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top)}
+button,input,select{font:inherit;color:inherit}
+#top{display:flex;align-items:center;justify-content:space-between;background:var(--bar);padding:0 6px;height:50px;flex:none}
+#top button{background:none;border:0;min-width:52px;height:44px;font-size:16px;font-weight:bold}
+#tfdrop{display:grid;grid-template-columns:repeat(9,1fr);max-height:0;overflow:hidden;transition:max-height .25s;background:var(--bar);flex:none}
+#tfdrop.open{max-height:48px;border-bottom:1px solid var(--line)}
+#tfdrop button{background:none;border:0;color:var(--mu);height:44px;font-size:13px;padding:0}
+#tfdrop button.on{color:#4c9bff;font-weight:bold}
+#tb{display:flex;flex:none;height:58px}
+.pb{flex:1;border:0;color:#fff;text-align:center;line-height:1.15;font-size:12px}
+.pb b{font-size:22px;font-weight:600;display:block}.pb sup{font-size:13px}
+#sell{background:var(--rd)}#buy{background:var(--bl)}
+#lotbox{display:flex;align-items:center;width:40%;background:#0d121b}
+#lotbox button{flex:none;width:38px;height:100%;background:none;border:0;font-size:22px}
+#lot{flex:1;min-width:0;width:100%;background:none;border:0;text-align:center;font-size:18px}
+#pane{flex:1;min-height:0;position:relative}
+.p{position:absolute;inset:0;overflow:auto;display:none}.p.on{display:block}
+#chart{position:absolute;inset:0;touch-action:none}
+#dc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#ov{position:absolute;top:8px;left:10px;z-index:3;pointer-events:none;direction:ltr;line-height:1.5}
+#ov b{color:#4c9bff;font-size:16px}#ov span{color:var(--mu);font-size:12px;display:block}
+#eb,#cb{position:absolute;bottom:14px;left:0;right:0;z-index:4;display:none;justify-content:center;gap:10px}
+#eb button,#cb button{border:0;border-radius:22px;padding:11px 20px;font-size:15px;background:var(--bl);color:#fff}
+#eb .g,#cb button{background:#1c2636}
+#nav{display:flex;flex:none;background:var(--bar);padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--line)}
+#nav button{flex:1;background:none;border:0;color:var(--mu);padding:7px 0 6px;font-size:11px}
+#nav button.on{color:#4c9bff}
+#nav svg{width:24px;height:24px;display:block;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.box{padding:12px;direction:var(--dir)}
+.box h4{margin:16px 0 8px;color:var(--mu);font-weight:normal;font-size:13px}
+.box input,.box select,.sh input,.sh select{width:100%;background:#0d121b;border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;font-size:16px;color:var(--tx)}
+.sh input[type=color]{height:44px;padding:2px}
+.btn{width:100%;padding:12px;border:0;border-radius:6px;background:var(--bl);color:#fff;margin-bottom:8px;font-size:15px}
+.btn.g{background:#1c2636}.btn.r{background:var(--rd)}.btn:disabled{opacity:.5}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);direction:ltr}
+.row small{color:var(--mu);display:block}
+.pos{color:var(--gr)}.neg{color:var(--rd)}.buyc{color:#4c9bff}.sellc{color:var(--rd)}
+#sheetbg{position:fixed;inset:0;background:#0009;z-index:9;display:none;align-items:flex-end;justify-content:center}
+.sh{width:100%;max-width:640px;max-height:85vh;overflow:auto;background:var(--bar);border-radius:14px 14px 0 0;padding:14px;direction:var(--dir);padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.otabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}.otabs button{flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:16px;background:none;color:var(--tx)}.otabs button.on{background:var(--bl);border-color:var(--bl)}.two{display:flex;gap:8px}.two>*{flex:1}.sh input[type=range]{padding:0}
+.sh .it{display:block;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:13px;text-align:center;font-size:16px}
+.lbl{color:var(--mu);font-size:12px;margin:4px 0 6px;line-height:1.6}
+#ringwrap{position:absolute;inset:0;z-index:6;display:none}
+#rb{position:absolute;inset:0}
+#rg{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,transparent 0 78px,#2b3442ee 79px)}
+.ri{position:absolute;width:48px;height:48px;border-radius:50%;border:0;background:none;color:#fff;font-size:15px;font-weight:bold;padding:0}
+#toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:#000b;padding:8px 14px;border-radius:16px;z-index:7;display:none;font-size:13px;white-space:nowrap}
+.pb i{font-style:normal}
+#spd{font-size:13px}
+.qh{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0f1620;position:sticky;top:0;z-index:2;direction:ltr;border-bottom:1px solid var(--line)}
+.qh span{font-weight:bold;font-size:16px}.qh button{background:none;border:0;color:var(--tx);font-size:22px;width:46px;height:42px;border-radius:14px}.qh button.on{background:var(--bl)}
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line);direction:ltr}.qrow:active{background:#ffffff0d}
+.qrow small{display:block;color:var(--mu);font-size:12px;margin-top:3px}.qp{margin-left:auto;text-align:right}.qp b{font-size:19px}.qd{background:none;border:0;font-size:20px;width:40px;height:40px}
+
+/* ---- wheel like the real app ---- */
+#rg{width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,transparent 0 71px,rgba(44,56,74,.94) 72px);box-shadow:none;animation:pop .14s ease}
+.ri{width:44px;height:44px;border:0;background:none;color:#e9eef5;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.ri svg{width:24px;height:24px;stroke-width:1.5}.ri:active{background:#ffffff22}
+/* ---- settings cards ---- */
+#ps{padding:14px}
+#ps .card{background:linear-gradient(#18212d,#131b26);border:1px solid #223042;border-radius:18px;padding:14px;margin-bottom:14px;box-shadow:0 6px 18px #0004}
+#ps h4{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:0;border:0;font-size:14px;font-weight:600;color:#9fb4cc}
+#ps h4::before{content:'';width:4px;height:16px;border-radius:2px;background:var(--bl)}
+#ps .card .btn:last-child{margin-bottom:0}
+#ps input[type=file]{padding:10px;background:#0d131c}
+</style>
+<style id="polish">
+:root{--bar:#0e1520;--bg:#07182a;--line:#1e2a3a;--tx:#e8eef6;--mu:#8fa0b5;--bl:#3b82f6}
+html,body{background:#0a1018}
+#top{background:linear-gradient(#172233,#0e1520);border-bottom:1px solid var(--line);box-shadow:0 2px 10px #0006}
+#top button{border-radius:12px;transition:background .15s}
+#top button:active{background:#ffffff14}
+#tb{padding:6px 8px;gap:6px;background:#0e1520}
+.pb{border-radius:12px;box-shadow:inset 0 1px 0 #ffffff33,0 3px 8px #0006}
+#sell{background:linear-gradient(#ef5b53,#c53a33)!important}
+#buy{background:linear-gradient(#4a90ff,#2b6fd8)!important}
+#lotbox{border-radius:12px;background:#0a111b;border:1px solid var(--line)}
+#nav{background:linear-gradient(#121b28,#0b121c);box-shadow:0 -2px 12px #0007;border-top:1px solid var(--line)}
+#nav button{transition:color .2s}
+#nav button.on{color:#5da2ff;text-shadow:0 0 12px #3b82f688}
+.sh{border-radius:22px 22px 0 0;background:linear-gradient(#172233,#0e1520);box-shadow:0 -10px 40px #000a;border-top:1px solid #ffffff14;max-height:86vh;overflow:auto}
+.sh::before{content:'';display:block;width:44px;height:4px;border-radius:2px;background:#ffffff33;margin:-4px auto 12px}
+#sheetbg{backdrop-filter:blur(3px)}
+.btn{border-radius:12px;background:linear-gradient(#4a90ff,#2b6fd8);box-shadow:0 3px 10px #2b6fd855;font-weight:bold}
+.btn.g{background:#1d2a3b;box-shadow:none}
+.btn.r{background:linear-gradient(#ef5b53,#c53a33);box-shadow:0 3px 10px #c53a3355}
+.row{background:#0d1826;border-radius:12px;margin:6px 10px;border:1px solid var(--line)}
+#rg{background:radial-gradient(circle,transparent 0 78px,#1b2636ee 79px);box-shadow:0 8px 30px #000a;border:1px solid #ffffff1a}
+.ri{display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s}
+.ri:active{background:#3b82f655}
+#ft{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:5;display:none;gap:4px;background:#101a28ee;border:1px solid #ffffff22;border-radius:28px;padding:6px;box-shadow:0 6px 20px #000a}
+#ft button{width:46px;height:46px;border-radius:50%;border:0;background:none;color:#fff;display:flex;align-items:center;justify-content:center}
+#ft button:active{background:#3b82f655}
+.otools{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px}
+.oi{flex:none;width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:#16212f;color:#cfe0f5;display:flex;align-items:center;justify-content:center}
+.orow{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.eye{background:none;border:0;color:#5b6b80;width:40px;height:40px}
+.eye.on{color:#5da2ff}
+.onm{flex:1}.onm small{display:block;color:var(--mu)}
+.osw{width:18px;height:18px;border-radius:50%;border:2px solid #fff3}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <button id="play">▶</button><button id="step">⏭</button><button id="tfb">M1 ▾</button><button id="spd">0 · ×1</button><button id="lim" data-i="limit"></button><button id="ord">＋</button>
+  </div>
+  <div id="tfdrop"></div>
+  <div id="tb">
+    <button class="pb" id="sell"><span>SELL</span><b><i id="sm">—</i><sup id="ss"></sup></b></button>
+    <div id="lotbox"><button id="lm">−</button><input id="lot" type="text" inputmode="decimal" step="0.01" min="0.01" value="0.10" inputmode="decimal"><button id="lp">+</button></div>
+    <button class="pb" id="buy"><span>BUY</span><b><i id="bm">—</i><sup id="bs"></sup></b></button>
+  </div>
+  <div id="pane">
+    <div class="p on" id="pc">
+      <div id="ov"><b id="sym">FX Replay</b><span id="tm"></span></div>
+      <div id="chart"></div><canvas id="dc"></canvas>
+    <div id="ft"><button id="ft_e"></button><button id="ft_c"></button><button id="ft_d"></button></div>
+      <div id="cb"><button id="cancel" data-i="cancel"></button></div>
+      <div id="ringwrap"></div><div id="toast"></div>
+      <div id="eb"><button id="ok"></button><button class="g" id="no"></button></div>
+    </div>
+    <div class="p" id="pq"></div>
+    <div class="p" id="pt"></div>
+    <div class="p" id="ph"></div>
+    <div class="p box" id="ps">
+      <div class="card"><h4 data-i="data"></h4>
+        <input type="file" id="file" accept=".csv,.txt">
+        <button class="btn g" id="demo" data-i="demo"></button>
+        <div class="lbl" data-i="hint"></div></div>
+      <div class="card"><h4 data-i="replay"></h4>
+        <input type="datetime-local" id="start">
+        <button class="btn" id="go" data-i="go"></button></div>
+      <div class="card"><h4 data-i="account"></h4>
+        <div class="lbl" data-i="init"></div><input id="init" type="text" inputmode="decimal" value="10000">
+        <div class="lbl" data-i="spread"></div><input id="spread" type="text" inputmode="decimal" step="any" value="0.0001">
+        <div class="lbl" data-i="contract"></div><input id="contract" type="text" inputmode="decimal" step="any" value="100000">
+        <button class="btn g" id="reset" data-i="reset"></button></div>
+      <div class="card"><h4 data-i="lang"></h4>
+        <select id="langsel"><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option><option value="tr">Türkçe</option></select></div>
+      <div class="lbl" id="msg"></div>\2
+    <button data-t="pq"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span data-i="quotes"></span></button>
+    <button class="on" data-t="pc"><svg viewBox="0 0 24 24"><path d="M7 4v3M7 17v3M17 3v4M17 15v5"/><rect x="4.5" y="7" width="5" height="10" rx="1"/><rect x="14.5" y="7" width="5" height="8" rx="1"/></svg><span data-i="charts"></span></button>
+    <button data-t="pt"><svg viewBox="0 0 24 24"><path d="M8 20V5M8 5l-4 4M8 5l4 4M16 4v15M16 19l-4-4M16 19l4-4"/></svg><span id="eq"></span></button>
+    <button data-t="ph"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span data-i="hist"></span></button>
+    <button data-t="ps"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span data-i="sets"></span></button>
+  </div>
+</div>
+<div id="sheetbg"><div class="sh" id="sh"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+// ---------- Languages ----------
+const L = {
+fa: { drawhint:'انگشتت رو روی چارت بذار و بکش', quotes:'قیمت‌ها', qadd:'افزودن نماد', custom:'نماد دلخواه', qempty:'هنوز نمادی ذخیره نشده. با ＋ یکی اضافه کن.', qdays:'تعداد روز', qsym:'نماد', t_r:'مستطیل', t_a:'فلش', t_c:'کانال', objs:'اشیاء', nm:'نام', extl:'امتداد به چپ', bgf:'رسم در پس‌زمینه', pt:'نقطه', empty:'هنوز ابزاری نکشیدی', copy:'کپی', ord:'سفارش جدید', vol:'حجم', mkt:'بازار', entry:'قیمت ورود', unit:'واحد SL/TP', onchart:'ست روی چارت', badentry:'قیمت ورود برای این نوع سفارش درست نیست.', place:'ثبت', charts:'نمودارها', trade:'معامله', hist:'تاریخچه', sets:'تنظیمات', limit:'لیمیت', data:'داده', demo:'ساخت داده تستی', sym:'نماد', days:'تعداد روز (۱ تا ۳۰)', dl:'بارگذاری', saved:'ذخیره‌شده‌ها', open:'باز کردن', replay:'شروع ری‌پلی از تاریخ', go:'شروع از این تاریخ', account:'حساب و بازار', init:'بالانس اولیه', spread:'Spread (به قیمت)', contract:'Contract size', reset:'ریست حساب و معاملات', lang:'زبان', nodata:'داده‌ای پیدا نشد.', loaded:'کندل بارگذاری شد.', loading:'در حال دریافت...', netfail:'دریافت داده ناموفق بود. اینترنت یا فیلترشکن رو چک کن، یا فایل CSV بده.', hint:'برای فارکس و طلای اصلی فایل CSV بده؛ دریافت مستقیم فعلاً برای کریپتو و PAXG (نزدیک به طلا) است.', t_h:'خط افقی', t_v:'خط عمودی', t_t:'خط روند', t_f:'فیبوناچی اصلاحی', ma:'میانگین متحرک (SMA)', apply:'اعمال', remove:'حذف اندیکاتور', color:'رنگ', width:'ضخامت', style:'سبک خط', solid:'ساده', dashed:'خط‌چین', dotted:'نقطه‌چین', price:'قیمت', ext:'امتداد تا لبه‌ی راست', levels:'سطح‌ها (با کاما)', save:'ذخیره', del:'حذف ابزار', clr:'حذف همه ابزارها', okx:'✓ تایید', nox:'بدون SL/TP', cancel:'✕ لغو', nopos:'معامله‌ی بازی نداری', orders:'سفارش‌های در انتظار', closet:'بستن معامله', editc:'ویرایش روی چارت', delo:'حذف سفارش', wrong:'برای Buy: SL پایین و TP بالای ورود باشه؛ برای Sell برعکس.', ctype:'نوع نمودار', candle:'کندل', bars:'میله‌ای (OHLC)', line:'منحنی', bg:'رنگ پس‌زمینه', txt:'رنگ متن و محور', grid:'رنگ خطوط شبکه', gridon:'نمایش شبکه', up:'کندل صعودی', dn:'کندل نزولی', lnc:'رنگ خط (منحنی)', cross:'نمایش خطوط تقاطع', defs:'بازگشت به پیش‌فرض', p1:'نقطه اول رو بزن', p2:'نقطه دوم رو بزن', ph:'روی چارت بزن', tfsmall:'این تایم‌فریم از دیتای فایل کوچیکتره' },
+en: { drawhint:'Press and drag on the chart', quotes:'Quotes', qadd:'Add symbol', custom:'Custom symbol', qempty:'No symbols saved yet. Tap ＋ to add one.', qdays:'Days', qsym:'Symbol', t_r:'Rectangle', t_a:'Arrow', t_c:'Channel', objs:'Objects', nm:'Name', extl:'Extend left', bgf:'Draw as background', pt:'Point', empty:'No objects yet', copy:'Copy', ord:'New order', vol:'Volume', mkt:'Market', entry:'Entry price', unit:'SL/TP unit', onchart:'Set on chart', badentry:'Entry price is not valid for this order type.', place:'Place', charts:'Charts', trade:'Trade', hist:'History', sets:'Settings', limit:'LIMIT', data:'Data', demo:'Generate demo data', sym:'Symbol', days:'Days (1–30)', dl:'Download', saved:'Saved', open:'Open', replay:'Start replay from date', go:'Start from this date', account:'Account & market', init:'Initial balance', spread:'Spread (price units)', contract:'Contract size', reset:'Reset account & trades', lang:'Language', nodata:'No data found.', loaded:'candles loaded.', loading:'Downloading...', netfail:'Download failed. Check your internet/VPN or load a CSV file.', hint:'For forex and spot gold load a CSV; direct download currently covers crypto and PAXG (gold-pegged).', t_h:'Horizontal line', t_v:'Vertical line', t_t:'Trendline', t_f:'Fibonacci retracement', ma:'Moving average (SMA)', apply:'Apply', remove:'Remove indicator', color:'Color', width:'Width', style:'Line style', solid:'Solid', dashed:'Dashed', dotted:'Dotted', price:'Price', ext:'Extend to right edge', levels:'Levels (comma separated)', save:'Save', del:'Delete tool', clr:'Delete all tools', okx:'✓ Confirm', nox:'No SL/TP', cancel:'✕ Cancel', nopos:'No open trades', orders:'Pending orders', closet:'Close trade', editc:'Edit on chart', delo:'Delete order', wrong:'Buy: SL below and TP above entry; Sell: the opposite.', ctype:'Chart type', candle:'Candles', bars:'Bars (OHLC)', line:'Line', bg:'Background color', txt:'Text & axis color', grid:'Grid color', gridon:'Show grid', up:'Bullish candle', dn:'Bearish candle', lnc:'Line color', cross:'Show crosshair', defs:'Reset to defaults', p1:'Tap the first point', p2:'Tap the second point', ph:'Tap on the chart', tfsmall:'This timeframe is smaller than the data' },
+ar: { drawhint:'اضغط واسحب على الرسم', quotes:'الأسعار', qadd:'إضافة رمز', custom:'رمز مخصص', qempty:'لا توجد رموز محفوظة. اضغط ＋ للإضافة.', qdays:'عدد الأيام', qsym:'الرمز', t_r:'مستطيل', t_a:'سهم', t_c:'قناة', objs:'الكائنات', nm:'الاسم', extl:'تمديد لليسار', bgf:'رسم كخلفية', pt:'نقطة', empty:'لا توجد كائنات', copy:'نسخ', ord:'أمر جديد', vol:'الحجم', mkt:'السوق', entry:'سعر الدخول', unit:'وحدة SL/TP', onchart:'ضبط على الرسم', badentry:'سعر الدخول غير صالح لهذا النوع.', place:'تنفيذ', charts:'الرسوم', trade:'التداول', hist:'السجل', sets:'الإعدادات', limit:'لِمت', data:'البيانات', demo:'إنشاء بيانات تجريبية', sym:'الرمز', days:'الأيام (1–30)', dl:'تحميل', saved:'المحفوظة', open:'فتح', replay:'بدء الإعادة من تاريخ', go:'ابدأ من هذا التاريخ', account:'الحساب والسوق', init:'الرصيد الأولي', spread:'السبريد (بوحدة السعر)', contract:'حجم العقد', reset:'إعادة ضبط الحساب', lang:'اللغة', nodata:'لا توجد بيانات.', loaded:'شمعة تم تحميلها.', loading:'جارٍ التحميل...', netfail:'فشل التحميل. تحقق من الإنترنت/VPN أو حمّل ملف CSV.', hint:'للفوركس والذهب الفوري حمّل ملف CSV؛ التحميل المباشر حالياً للعملات الرقمية وPAXG.', t_h:'خط أفقي', t_v:'خط عمودي', t_t:'خط اتجاه', t_f:'فيبوناتشي', ma:'المتوسط المتحرك (SMA)', apply:'تطبيق', remove:'إزالة المؤشر', color:'اللون', width:'السماكة', style:'نمط الخط', solid:'متصل', dashed:'متقطع', dotted:'منقط', price:'السعر', ext:'تمديد إلى الحافة اليمنى', levels:'المستويات (بفاصلة)', save:'حفظ', del:'حذف الأداة', clr:'حذف كل الأدوات', okx:'✓ تأكيد', nox:'بدون SL/TP', cancel:'✕ إلغاء', nopos:'لا توجد صفقات مفتوحة', orders:'أوامر معلقة', closet:'إغلاق الصفقة', editc:'تعديل على الرسم', delo:'حذف الأمر', wrong:'للشراء: SL تحت و TP فوق الدخول؛ للبيع العكس.', ctype:'نوع الرسم', candle:'شموع', bars:'أعمدة (OHLC)', line:'خط', bg:'لون الخلفية', txt:'لون النص والمحور', grid:'لون الشبكة', gridon:'إظهار الشبكة', up:'شمعة صاعدة', dn:'شمعة هابطة', lnc:'لون الخط', cross:'إظهار خطوط التقاطع', defs:'استعادة الافتراضي', p1:'اضغط النقطة الأولى', p2:'اضغط النقطة الثانية', ph:'اضغط على الرسم', tfsmall:'هذا الإطار أصغر من البيانات' },
+tr: { drawhint:'Grafiğe basıp sürükleyin', quotes:'Fiyatlar', qadd:'Sembol ekle', custom:'Özel sembol', qempty:'Kayıtlı sembol yok. Eklemek için ＋ dokun.', qdays:'Gün sayısı', qsym:'Sembol', t_r:'Dikdörtgen', t_a:'Ok', t_c:'Kanal', objs:'Nesneler', nm:'Ad', extl:'Sola uzat', bgf:'Arka planda çiz', pt:'Nokta', empty:'Henüz nesne yok', copy:'Kopyala', ord:'Yeni emir', vol:'Hacim', mkt:'Piyasa', entry:'Giriş fiyatı', unit:'SL/TP birimi', onchart:'Grafikte ayarla', badentry:'Giriş fiyatı bu emir türü için geçerli değil.', place:'Gönder', charts:'Grafik', trade:'İşlem', hist:'Geçmiş', sets:'Ayarlar', limit:'LİMİT', data:'Veri', demo:'Demo veri oluştur', sym:'Sembol', days:'Gün (1–30)', dl:'İndir', saved:'Kayıtlı', open:'Aç', replay:'Tekrarı tarihten başlat', go:'Bu tarihten başla', account:'Hesap ve piyasa', init:'Başlangıç bakiyesi', spread:'Spread (fiyat birimi)', contract:'Kontrat büyüklüğü', reset:'Hesabı sıfırla', lang:'Dil', nodata:'Veri bulunamadı.', loaded:'mum yüklendi.', loading:'İndiriliyor...', netfail:'İndirme başarısız. İnternet/VPN kontrol et veya CSV yükle.', hint:'Forex ve spot altın için CSV yükle; doğrudan indirme şimdilik kripto ve PAXG içindir.', t_h:'Yatay çizgi', t_v:'Dikey çizgi', t_t:'Trend çizgisi', t_f:'Fibonacci düzeltme', ma:'Hareketli ortalama (SMA)', apply:'Uygula', remove:'Göstergeyi kaldır', color:'Renk', width:'Kalınlık', style:'Çizgi stili', solid:'Düz', dashed:'Kesik', dotted:'Noktalı', price:'Fiyat', ext:'Sağ kenara uzat', levels:'Seviyeler (virgülle)', save:'Kaydet', del:'Aracı sil', clr:'Tüm araçları sil', okx:'✓ Onayla', nox:'SL/TP yok', cancel:'✕ İptal', nopos:'Açık işlem yok', orders:'Bekleyen emirler', closet:'İşlemi kapat', editc:'Grafikte düzenle', delo:'Emri sil', wrong:'Alış: SL girişin altında, TP üstünde; satış: tersi.', ctype:'Grafik türü', candle:'Mum', bars:'Çubuk (OHLC)', line:'Çizgi', bg:'Arka plan rengi', txt:'Metin ve eksen rengi', grid:'Izgara rengi', gridon:'Izgarayı göster', up:'Yükselen mum', dn:'Düşen mum', lnc:'Çizgi rengi', cross:'Artı imleci göster', defs:'Varsayılana dön', p1:'İlk noktaya dokun', p2:'İkinci noktaya dokun', ph:'Grafiğe dokun', tfsmall:'Bu zaman dilimi veriden küçük' }
+};
+let LANG = store.get('fxr_lang', 'fa');
+const t = k => (L[LANG] && L[LANG][k]) || L.en[k] || k;
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.documentElement.style.setProperty('--dir', (LANG === 'fa' || LANG === 'ar') ? 'rtl' : 'ltr');
+  document.querySelectorAll('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
+  $('langsel').value = LANG; $('msg').textContent = data.length ? data.length + ' ' + t('loaded') : '';
+  render();
+  try { chart.applyOptions({ localization: { locale: LOC[LANG], priceFormatter: p => nd(p.toFixed(digits)) } }); } catch (e) {}
+  convAll();
+}
+$('langsel').onchange = e => { LANG = e.target.value; store.set('fxr_lang', LANG); applyLang(); };
+
+// ---------- State ----------
+let data = [], i = 0, bt = 60, tf = 1, bars = [], digits = 5, sym = 'DEMO', tab = 'pc';
+let playing = false, last = 0, lastR = 0, lastS = 0, prog = 0, price = 0, fh = 0, fl = 0, spdIdx = 0;
+const SPEEDS = [1, 2, 3, 5, 10, 30, 60];
+let initial = 10000, balance = 10000, pos = [], orders = [], hist = [], nid = 1;
+let edit = null, lineObjs = [], lastSig = '', slL = null, tpL = null, enL = null, bidL = null, askL = null;
+let ctype = 'candle', series = null, maS = null, maP = 20;
+let drawMode = null, pend = null, drawings = [], sel = null, dseq = 1, G = null, lastTouch = 0, ftOn = false;
+
+// ---------- Chart & style ----------
+const STY0 = { type: 'candle', bg: '#051b2c', text: '#c8d0da', grid: '#0c2a40', gridOn: true, up: '#34d34a', down: '#f5a30d', line: '#4c9bff', cross: false };
+let STY = Object.assign({}, STY0, store.get('fxr_style', {}));
+const chart = LightweightCharts.createChart($('chart'), {
+  autoSize: true, rightPriceScale: { borderColor: '#222c3b' },
+  timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#222c3b', rightOffset: 8 }
+});
+function makeSeries(type) {
+  if (series) chart.removeSeries(series);
+  ctype = type;
+  const c = { lastValueVisible: false, priceLineVisible: false };
+  if (type === 'line') series = chart.addLineSeries(Object.assign({ color: STY.line, lineWidth: 2, crosshairMarkerVisible: false }, c));
+  else if (type === 'bars') series = chart.addBarSeries(Object.assign({ upColor: STY.up, downColor: STY.down }, c));
+  else series = chart.addCandlestickSeries(Object.assign({ upColor: STY.up, downColor: STY.down, borderVisible: false, wickUpColor: STY.up, wickDownColor: STY.down }, c));
+  series.applyOptions({ priceFormat: { type: 'price', precision: digits, minMove: Math.pow(10, -digits) } });
+  bidL = askL = null; lineObjs = []; lastSig = ''; slL = tpL = enL = null;
+  if (bars.length) { setSeriesData(); showForming(); }
+}
+function applyStyle() {
+  chart.applyOptions({
+    layout: { background: { color: STY.bg }, textColor: STY.text },
+    grid: { vertLines: { visible: false }, horzLines: { visible: STY.gridOn, color: STY.grid } },
+    crosshair: { vertLine: { visible: STY.cross, labelVisible: STY.cross }, horzLine: { visible: STY.cross, labelVisible: STY.cross } }
+  });
+  $('pc').style.background = STY.bg;
+  if (!series || ctype !== STY.type) makeSeries(STY.type);
+  else if (ctype === 'line') series.applyOptions({ color: STY.line });
+  else series.applyOptions({ upColor: STY.up, downColor: STY.down, wickUpColor: STY.up, wickDownColor: STY.down });
+  render();
+}
+const setSeriesData = () => series.setData(ctype === 'line' ? bars.map(b => ({ time: b.time, value: b.close })) : bars);
+const put = b => series.update(ctype === 'line' ? { time: b.time, value: b.close } : b);
+function styleSheet() {
+  const o = (v, k) => `<option value="${v}"${STY.type === v ? ' selected' : ''}>${t(k)}</option>`;
+  const c = (key, k) => `<div class="lbl">${t(k)}</div><input id="st_${key}" type="color" value="${STY[key]}">`;
+  const ck = (key, k) => `<label class="lbl" style="display:block"><input id="st_${key}" type="checkbox" style="width:auto;margin:0 8px" ${STY[key] ? 'checked' : ''}>${t(k)}</label>`;
+  sheet(`<div class="lbl">${t('ctype')}</div><select id="st_type">${o('candle', 'candle')}${o('bars', 'bars')}${o('line', 'line')}</select>
+    ${c('bg', 'bg')}${c('text', 'txt')}${c('grid', 'grid')}${c('up', 'up')}${c('down', 'dn')}${c('line', 'lnc')}${ck('gridOn', 'gridon')}${ck('cross', 'cross')}
+    <button class="btn" onclick="saveStyle()">${t('save')}</button><button class="btn g" onclick="resetStyle()">${t('defs')}</button>`);
+}
+function saveStyle() {
+  STY.type = $('st_type').value;
+  for (const k of ['bg', 'text', 'grid', 'up', 'down', 'line']) STY[k] = $('st_' + k).value;
+  STY.gridOn = $('st_gridOn').checked; STY.cross = $('st_cross').checked;
+  store.set('fxr_style', STY); hideSheet(); applyStyle();
+}
+function resetStyle() { STY = Object.assign({}, STY0); store.set('fxr_style', STY); hideSheet(); applyStyle(); }
+
+// ---------- Helpers ----------
+const tfName = m => m < 60 ? 'M' + m : m < 1440 ? 'H' + m / 60 : m === 1440 ? 'D1' : m === 10080 ? 'W1' : 'MN';
+const fmtT = s => new Date(s * 1000).toISOString().replace('T', ' ').slice(0, 16);
+const cls = v => v >= 0 ? 'pos' : 'neg';
+const spread = () => +$('spread').value || 0;
+const contract = () => +$('contract').value || 100000;
+const curT = () => data[Math.min(i + 1, data.length - 1)].t + Math.floor(prog * bt);
+function toast(m) { const e = $('toast'); e.textContent = m; e.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.display = 'none', 2500); }
+function sheet(h) { $('sh').innerHTML = h; $('sheetbg').style.display = 'flex'; }
+function hideSheet() { $('sheetbg').style.display = 'none'; sel = null; draw(); }
+$('sheetbg').onclick = e => { if (e.target.id === 'sheetbg') hideSheet(); };
+
+// ---------- Data: CSV, IndexedDB, Binance ----------
+function parseCSV(text) {
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split(/[,;\t]/);
+    if (p.length < 5) continue;
+    const m = p[0].match(/^(\d{4})[.\-\/]?(\d{2})[.\-\/]?(\d{2})(?:[ T](\d{2}):?(\d{2}))?/);
+    if (!m) continue;
+    let h = m[4], mi = m[5], k = 1;
+    if (h === undefined) {
+      const tm = p[1].match(/^(\d{2}):(\d{2})/);
+      if (tm) { h = tm[1]; mi = tm[2]; k = 2; } else { h = 0; mi = 0; }
+    }
+    const v = p.slice(k, k + 4).map(Number);
+    if (v.some(isNaN)) continue;
+    out.push({ t: Date.UTC(+m[1], +m[2] - 1, +m[3], +h, +mi) / 1000, o: v[0], h: v[1], l: v[2], c: v[3] });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+const idb = () => new Promise((res, rej) => { const r = indexedDB.open('fxr', 1); r.onupgradeneeded = () => r.result.createObjectStore('d'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const dbOp = (mode, fn) => idb().then(d => new Promise((res, rej) => { const tx = d.transaction('d', mode), rq = fn(tx.objectStore('d')); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error); }));
+const dbPut = (k, v) => dbOp('readwrite', s => s.put(v, k));
+const dbGet = k => dbOp('readonly', s => s.get(k));
+const dbKeys = () => dbOp('readonly', s => s.getAllKeys());
+const pack = a => a.map(c => [c.t, c.o, c.h, c.l, c.c]);
+const unpack = a => a.map(r => ({ t: r[0], o: r[1], h: r[2], l: r[3], c: r[4] }));
+function refreshSaved() {}
+
+async function fetchBinance(symbol, days) {
+  const end = Date.now(), hosts = ['https://data-api.binance.vision', 'https://api.binance.com'];
+  let start = end - days * 86400000, host = null; const out = [];
+  while (start < end) {
+    const q = `/api/v3/klines?symbol=${symbol}&interval=1m&startTime=${start}&limit=1000`;
+    let rows = null, err;
+    for (const h of (host ? [host] : hosts)) {
+      try { const r = await fetch(h + q); if (!r.ok) throw new Error(r.status); rows = await r.json(); host = h; break; } catch (e) { err = e; }
+    }
+    if (!rows) throw err || new Error('fetch');
+    if (!rows.length) break;
+    for (const k of rows) out.push({ t: Math.floor(k[0] / 1000), o: +k[1], h: +k[2], l: +k[3], c: +k[4] });
+    start = rows[rows.length - 1][0] + 60000;
+    $('msg').textContent = t('loading') + ' ' + out.length;
+    if (rows.length < 1000) break;
+  }
+  return out;
+}
+$('file').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { const arr = parseCSV(r.result); load(arr, f.name); if (arr.length > 9) saveSym(sym, arr); };
+  r.readAsText(f);
+};
+$('demo').onclick = () => {
+  let tt = Date.UTC(2024, 0, 1) / 1000, p = 1.1, out = [];
+  for (let k = 0; k < 60000; k++) {
+    const o = p; let c = o, h = o, l = o;
+    for (let j = 0; j < 4; j++) { c += (Math.random() - 0.5) * 0.0004; h = Math.max(h, c); l = Math.min(l, c); }
+    out.push({ t: tt, o: +o.toFixed(5), h: +h.toFixed(5), l: +l.toFixed(5), c: +c.toFixed(5) });
+    p = c; tt += 60;
+  }
+  load(out, '');
+};
+function load(arr, name) {
+  if (arr.length < 10) { $('msg').textContent = t('nodata'); return; }
+  pause(); data = arr;
+  const ds = []; for (let k = 1; k < Math.min(60, arr.length); k++) ds.push(arr[k].t - arr[k - 1].t);
+  ds.sort((a, b) => a - b); bt = Math.max(60, ds[ds.length >> 1] || 60);
+  sym = (name ? name.replace(/\.[^.]+$/, '').replace(/[_\-\s]?(M|H|D)\d+.*$/i, '').toUpperCase() : 'DEMO').slice(0, 12) || 'DATA';
+  loadDraw(); resetAccount();
+  digits = Math.min(5, Math.max(2, (String(arr[0].c).split('.')[1] || '').length));
+  if (/USDT$/.test(sym)) { $('contract').value = 1; $('spread').value = 0; }
+  $('start').value = new Date(arr[0].t * 1000).toISOString().slice(0, 16);
+  if (tf * 60 < bt) setTF(bt / 60, true);
+  i = Math.min(300, arr.length - 3);
+  makeSeries(ctype); rebuild();
+  $('msg').textContent = arr.length + ' ' + t('loaded');
+  goTab('pc');
+}
+
+// ---------- Replay engine (tick-like candle formation) ----------
+function bucket(tt) {
+  if (tf === 10080) return Math.floor((tt - 345600) / 604800) * 604800 + 345600;
+  if (tf === 43200) { const d = new Date(tt * 1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) / 1000; }
+  const s = tf * 60; return Math.floor(tt / s) * s;
+}
+function addToBars(c) {
+  const b = bucket(c.t), lb = bars[bars.length - 1];
+  if (lb && lb.time === b) { lb.high = Math.max(lb.high, c.h); lb.low = Math.min(lb.low, c.l); lb.close = c.c; }
+  else bars.push({ time: b, open: c.o, high: c.h, low: c.l, close: c.c });
+  return bars[bars.length - 1];
+}
+function seedOf(c) { let h = Math.imul(c.t ^ 0x9e3779b9, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+const KS = 120; let pcache = { t: -1, P: null };
+function pathFor(c) {
+  if (pcache.t === c.t && pcache.P) return pcache.P;
+  let sd = Math.floor(seedOf(c) * 4294967296) >>> 0;
+  const rnd = () => { sd = (sd + 0x6D2B79F5) | 0; let x = Math.imul(sd ^ (sd >>> 15), 1 | sd); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  const rg = Math.max(c.h - c.l, 1e-12), bull = c.c >= c.o, lowFirst = bull ? rnd() < 0.7 : rnd() < 0.3;
+  const a = lowFirst ? [c.o, c.l, c.h, c.c] : [c.o, c.h, c.l, c.c];
+  const w = [0, Math.floor(KS * (0.12 + rnd() * 0.3)), Math.floor(KS * (0.55 + rnd() * 0.3)), KS];
+  const P = new Array(KS + 1);
+  for (let sg = 0; sg < 3; sg++) {
+    const n = Math.max(1, w[sg + 1] - w[sg]), m = 3 + Math.floor(rnd() * 4), dv = [0];
+    for (let k = 0; k < m; k++) dv.push((rnd() * 2 - 1) * rg * 0.3); dv.push(0);
+    for (let j = 0; j <= n; j++) {
+      const f = j / n, pos = f * (m + 1), k0 = Math.min(m, Math.floor(pos)), fr = pos - k0;
+      const dev = dv[k0] + (dv[k0 + 1] - dv[k0]) * fr, env = Math.sqrt(Math.sin(Math.PI * f));
+      P[w[sg] + j] = Math.min(c.h, Math.max(c.l, a[sg] + (a[sg + 1] - a[sg]) * f + dev * env + (rnd() - 0.5) * rg * 0.05 * env));
+    }
+  }
+  P[0] = a[0]; P[w[1]] = a[1]; P[w[2]] = a[2]; P[KS] = a[3];
+  pcache = { t: c.t, P }; return P;
+}
+function priceAt(c, p) { const P = pathFor(c), x = Math.min(1, Math.max(0, p)) * KS, k = Math.min(KS - 1, Math.floor(x)); return P[k] + (P[k + 1] - P[k]) * (x - k); }
+function rangeOf(c, p0, p1) {
+  const P = pathFor(c); let lo = Infinity, hi = -Infinity;
+  const e = v => { if (v < lo) lo = v; if (v > hi) hi = v; };
+  e(priceAt(c, p0)); e(priceAt(c, p1));
+  for (let k = Math.ceil(p0 * KS); k <= Math.floor(p1 * KS); k++) e(P[k]);
+  return [lo, hi];
+}
+function resetForming() { const c = data[i + 1]; fh = fl = price = c.o; prog = 0; }
+function showForming() {
+  const c = data[i + 1]; if (!c || !bars.length) return;
+  const b = bucket(c.t), lb = bars[bars.length - 1];
+  put(lb && lb.time === b ? { time: b, open: lb.open, high: Math.max(lb.high, fh), low: Math.min(lb.low, fl), close: price } : { time: b, open: c.o, high: fh, low: fl, close: price });
+}
+function rebuild() {
+  i = Math.max(0, Math.min(i, data.length - 2));
+  bars = [];
+  const look = Math.ceil(tf * 60 / bt) * 3000;
+  for (let k = Math.max(0, i - look); k <= i; k++) addToBars(data[k]);
+  setSeriesData(); if (maS) calcMA();
+  resetForming(); showForming(); render();
+}
+function advance(dp) {
+  let rem = dp, guard = 0;
+  while (rem > 1e-9 && guard++ < 4000) {
+    if (i >= data.length - 2) { pause(); break; }
+    const c = data[i + 1], p0 = prog, step = Math.min(rem, 1 - p0);
+    let p1 = p0 + step; if (1 - p1 < 1e-9) p1 = 1;
+    rem -= step;
+    const [lo, hi] = rangeOf(c, p0, p1);
+    fh = Math.max(fh, hi); fl = Math.min(fl, lo);
+    prog = p1; price = priceAt(c, p1);
+    checkStops(lo, hi); checkOrders(lo, hi);
+    if (prog >= 1) { i++; const b = addToBars(data[i]); put(b); if (maS) updMA(); if (i < data.length - 1) resetForming(); }
+  }
+  const now = performance.now();
+  if (now - lastS > 45) { lastS = now; showForming(); }
+  if (now - lastR > 150) { lastR = now; render(); }
+}
+let chain = 0;
+function play() {
+  if (!data.length || playing) return;
+  playing = true; last = performance.now(); $('play').textContent = '⏸';
+  const my = ++chain;
+  const f = () => {
+    if (!playing || my !== chain) return;
+    try {
+      const nw = performance.now(), dt = Math.min(0.25, Math.max(0, (nw - last) / 1000)); last = nw;
+      advance(dt * SPEEDS[spdIdx] / bt);
+    } catch (e) { pause(); toast('⚠ ' + e.message); return; }
+    if (playing && my === chain) requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+}
+function pause() { playing = false; $('play').textContent = '▶'; try { if (data.length && bars.length) showForming(); } catch (e) {} }
+$('play').onclick = () => playing ? pause() : play();
+$('step').onclick = () => { if (!data.length) return; pause(); advance(prog === 0 ? 1 : 1 - prog); render(); };
+$('spd').onclick = () => { spdIdx = (spdIdx + 1) % SPEEDS.length; $('spd').textContent = spdIdx + ' · ×' + SPEEDS[spdIdx]; };
+$('go').onclick = () => {
+  if (!data.length || !$('start').value) return;
+  pause();
+  const tt = Date.parse($('start').value + ':00Z') / 1000, idx = data.findIndex(c => c.t >= tt);
+  i = idx < 0 ? data.length - 2 : idx; rebuild(); goTab('pc');
+};
+// timeframe drop-down
+const TFS = [1, 5, 15, 30, 60, 240, 1440, 10080, 43200];
+$('tfdrop').innerHTML = TFS.map(m => `<button data-m="${m}">${tfName(m)}</button>`).join('');
+$('tfb').onclick = () => $('tfdrop').classList.toggle('open');
+$('tfdrop').onclick = e => { const m = +e.target.dataset.m; if (!m) return; setTF(m); $('tfdrop').classList.remove('open'); };
+function setTF(m, quiet) {
+  if (m * 60 < bt && data.length) { if (!quiet) toast(t('tfsmall')); return; }
+  tf = m; $('tfb').textContent = tfName(m) + ' ▾';
+  document.querySelectorAll('#tfdrop button').forEach(b => b.classList.toggle('on', +b.dataset.m === m));
+  if (data.length) rebuild();
+}
+
+// ---------- Trading ----------
+const profitOf = (p, x) => (p.type === 'buy' ? x - p.price : p.price - x) * p.lot * contract();
+const exitNow = p => p.type === 'buy' ? price : price + spread();
+function openPos(type, lot, entry, sl, tp) { const p = { id: nid++, type, lot, price: entry, sl, tp, t: curT() }; pos.push(p); return p; }
+function openTrade(type) {
+  if (!data.length) return;
+  const lot = +$('lot').value; if (!(lot > 0)) return;
+  const p = openPos(type, lot, type === 'buy' ? price + spread() : price, 0, 0);
+  startEdit(p, 'pos'); render();
+}
+function closeTrade(p, exit, reason) {
+  const profit = profitOf(p, exit); balance += profit;
+  hist.push({ ...p, exit, profit, ct: curT(), reason }); pos = pos.filter(x => x !== p);
+}
+function checkStops(lo, hi) {
+  const sp = spread();
+  for (const p of pos.slice()) {
+    if (p.type === 'buy') {
+      if (p.sl && lo <= p.sl) closeTrade(p, p.sl, 'SL'); else if (p.tp && hi >= p.tp) closeTrade(p, p.tp, 'TP');
+    } else {
+      if (p.sl && hi + sp >= p.sl) closeTrade(p, p.sl, 'SL'); else if (p.tp && lo + sp <= p.tp) closeTrade(p, p.tp, 'TP');
+    }
+  }
+}
+function checkOrders(lo, hi) {
+  const sp = spread();
+  for (const o of orders.slice()) {
+    const hit = o.type === 'buy' ? (o.kind === 'limit' ? lo + sp <= o.en : hi + sp >= o.en) : (o.kind === 'limit' ? hi >= o.en : lo <= o.en);
+    if (hit) { orders = orders.filter(x => x !== o); openPos(o.type, o.lot, o.en, o.sl, o.tp); }
+  }
+}
+function resetAccount() { initial = +$('init').value || 10000; balance = initial; pos = []; orders = []; hist = []; nid = 1; edit = null; if (data.length) render(); }
+$('reset').onclick = resetAccount;
+$('buy').onclick = () => openTrade('buy');
+$('sell').onclick = () => openTrade('sell');
+const setLot = d => { $('lot').value = Math.max(0.01, +(+$('lot').value + d).toFixed(2)).toFixed(2); };
+$('lm').onclick = () => setLot(-0.01); $('lp').onclick = () => setLot(0.01);
+$('lim').onclick = () => { if (data.length) startEdit(null, 'limit'); };
+
+function calcDist() {
+  const n = Math.min(50, bars.length); let s = 0;
+  for (let k = bars.length - n; k < bars.length; k++) s += bars[k].high - bars[k].low;
+  return Math.max(n ? s / n * 3 : 0, Math.pow(10, -digits) * 20);
+}
+function startEdit(p, mode) {
+  pause(); const d = calcDist();
+  if (mode === 'limit') edit = { mode, en: +(price - d * 0.5).toFixed(digits), sl: +(price - d * 1.5).toFixed(digits), tp: +(price + d).toFixed(digits) };
+  else { const b = p.type === 'buy'; edit = { mode: 'pos', id: p.id, sl: p.sl || +(b ? p.price - d : p.price + d).toFixed(digits), tp: p.tp || +(b ? p.price + d * 1.5 : p.price - d * 1.5).toFixed(digits) }; }
+  goTab('pc');
+}
+function editOnChart(id) { const p = pos.find(x => x.id === id); if (!p) return; hideSheet(); startEdit(p, 'pos'); }
+$('ok').onclick = () => {
+  if (!edit) return;
+  if (edit.mode === 'limit') {
+    const { en, sl, tp } = edit, buy = tp > en;
+    if (buy ? !(sl < en) : !(sl > en)) { alert(t('wrong')); return; }
+    const lot = +$('lot').value; if (!(lot > 0)) return;
+    const kind = buy ? (en < price + spread() ? 'limit' : 'stop') : (en > price ? 'limit' : 'stop');
+    orders.push({ id: nid++, type: buy ? 'buy' : 'sell', kind, lot, en, sl, tp }); edit = null; render(); return;
+  }
+  const p = pos.find(x => x.id === edit.id); if (!p) { edit = null; render(); return; }
+  const b = p.type === 'buy';
+  if ((edit.sl && (b ? edit.sl >= p.price : edit.sl <= p.price)) || (edit.tp && (b ? edit.tp <= p.price : edit.tp >= p.price))) { alert(t('wrong')); return; }
+  p.sl = edit.sl; p.tp = edit.tp; edit = null; render();
+};
+$('no').onclick = () => {
+  if (edit && edit.mode === 'pos') { const p = pos.find(x => x.id === edit.id); if (p) { p.sl = 0; p.tp = 0; } }
+  edit = null; render();
+};
+function posSheet(id) {
+  const p = pos.find(x => x.id === id); if (!p) return;
+  sheet(`<div class="lbl">${sym} ${p.type} ${p.lot} @ ${p.price.toFixed(digits)}</div>
+    <button class="btn g" onclick="editOnChart(${id})">${t('editc')}</button>
+    <button class="btn r" onclick="closeById(${id})">${t('closet')}</button>`);
+}
+function closeById(id) { const p = pos.find(x => x.id === id); if (p) closeTrade(p, exitNow(p), 'manual'); hideSheet(); render(); }
+function orderSheet(id) {
+  const o = orders.find(x => x.id === id); if (!o) return;
+  sheet(`<div class="lbl">${sym} ${o.type} ${o.kind} ${o.lot} @ ${o.en}</div><button class="btn r" onclick="delOrder(${id})">${t('delo')}</button>`);
+}
+function delOrder(id) { orders = orders.filter(x => x.id !== id); hideSheet(); render(); }
+
+function drawLines() {
+  if (edit && edit.mode === 'pos' && !pos.find(p => p.id === edit.id)) edit = null;
+  $('eb').style.display = edit ? 'flex' : 'none';
+  if (edit) { $('ok').textContent = t('okx'); $('no').textContent = edit.mode === 'limit' ? t('cancel') : t('nox'); }
+  const sig = pos.map(p => [p.id, p.sl, p.tp].join(':')).join(',') + '|' + orders.map(o => [o.id, o.en, o.sl, o.tp].join(':')).join(',') + '|' + (edit ? edit.mode + (edit.id || '') : '');
+  if (sig === lastSig) return; lastSig = sig;
+  lineObjs.forEach(l => series.removePriceLine(l)); lineObjs = []; slL = tpL = enL = null;
+  const LS = LightweightCharts.LineStyle;
+  const mk = (p, col, w, st, ti) => { const l = series.createPriceLine({ price: p, color: col, lineWidth: w, lineStyle: st, axisLabelVisible: true, title: ti }); lineObjs.push(l); return l; };
+  for (const p of pos) {
+    mk(p.price, p.type === 'buy' ? '#4c9bff' : '#d9453f', 1, LS.Dotted, p.type + ' ' + p.lot);
+    if (edit && edit.mode === 'pos' && edit.id === p.id) continue;
+    if (p.sl) mk(p.sl, '#ff5252', 1, LS.Dashed, lv('SL', p.type, p.price, p.sl, p.lot)); if (p.tp) mk(p.tp, '#34d34a', 1, LS.Dashed, lv('TP', p.type, p.price, p.tp, p.lot));
+  }
+  for (const o of orders) { mk(o.en, '#e0c050', 1, LS.Dotted, o.type + ' ' + o.kind + ' ' + o.lot); if (o.sl) mk(o.sl, '#ff5252', 1, LS.Dashed, lv('SL', o.type, o.en, o.sl, o.lot)); if (o.tp) mk(o.tp, '#34d34a', 1, LS.Dashed, lv('TP', o.type, o.en, o.tp, o.lot)); }
+  if (edit) {
+    if (edit.mode === 'limit') enL = mk(edit.en, '#4c9bff', 2, LS.Solid, 'Entry');
+    slL = mk(edit.sl, '#ff5252', 2, LS.Dashed, 'SL'); tpL = mk(edit.tp, '#34d34a', 2, LS.Dashed, 'TP'); updEditLines();
+  }
+}
+const lv = (n, type, en, l, lot) => { const diff = type === 'buy' ? l - en : en - l, usd = diff * lot * contract(); return n + ' ' + (usd >= 0 ? '+' : '') + usd.toFixed(2) + ' USD, ' + Math.round(Math.abs(diff) / Math.pow(10, -digits)) + ' points'; };
+function editInfo() {
+  if (edit.mode === 'limit') return { type: edit.tp > edit.en ? 'buy' : 'sell', en: edit.en, lot: +$('lot').value || 0 };
+  const p = pos.find(x => x.id === edit.id); return p ? { type: p.type, en: p.price, lot: p.lot } : null;
+}
+function updEditLines() {
+  if (enL) enL.applyOptions({ price: edit.en });
+  const i = editInfo();
+  if (slL) slL.applyOptions({ price: edit.sl, title: i ? lv('SL', i.type, i.en, edit.sl, i.lot) : 'SL' });
+  if (tpL) tpL.applyOptions({ price: edit.tp, title: i ? lv('TP', i.type, i.en, edit.tp, i.lot) : 'TP' });
+}
+function nearEdit(y) {
+  let best = null, bd = 30;
+  for (const k of (edit.mode === 'limit' ? ['en', 'sl', 'tp'] : ['sl', 'tp'])) { const c = series.priceToCoordinate(edit[k]); if (c != null && Math.abs(c - y) < bd) { bd = Math.abs(c - y); best = k; } }
+  return best;
+}
+
+
+// ---------- Order dialog (market / limit / stop) ----------
+let od = null;
+const KINDS = [['mkt', 'Market'], ['buyLimit', 'Buy Limit'], ['sellLimit', 'Sell Limit'], ['buyStop', 'Buy Stop'], ['sellStop', 'Sell Stop']];
+const ptSize = () => Math.pow(10, -digits);
+function openOrder() { if (!data.length) return; pause(); od = { kind: 'mkt', lot: +$('lot').value || 0.1, en: 0, slv: '', tpv: '', unit: 'price' }; renderOrder(); }
+function odSave() {
+  if (!od || !$('o_vol')) return;
+  od.lot = +$('o_vol').value || od.lot; od.slv = $('o_sl').value; od.tpv = $('o_tp').value; od.unit = $('o_unit').value;
+  if ($('o_en')) od.en = $('o_en').value;
+}
+function odKind(k) {
+  odSave(); od.kind = k;
+  const d = calcDist(), sp = spread();
+  od.en = +({ buyLimit: price + sp - d * 0.5, sellLimit: price + d * 0.5, buyStop: price + sp + d * 0.5, sellStop: price - d * 0.5 }[k] || price).toFixed(digits);
+  renderOrder();
+}
+function odUnit(u) { odSave(); od.unit = u; od.slv = ''; od.tpv = ''; renderOrder(); }
+function renderOrder() {
+  const k = od.kind, pend = k !== 'mkt', name = KINDS.find(x => x[0] === k)[1];
+  const tabs = KINDS.map(([id, nm]) => `<button class="${id === k ? 'on' : ''}" onclick="odKind('${id}')">${nm}</button>`).join('');
+  const un = [['price', 'Price'], ['points', 'Points'], ['usd', 'USD']].map(([v, n]) => `<option value="${v}"${od.unit === v ? ' selected' : ''}>${n}</option>`).join('');
+  sheet(`<div class="otabs">${tabs}</div>
+    <div class="lbl">${t('vol')}</div>
+    <input id="o_vol" type="text" inputmode="decimal" step="0.01" min="0.01" value="${od.lot}" oninput="$('o_rng').value=this.value">
+    <input id="o_rng" type="range" min="0.01" max="10" step="0.01" value="${Math.min(10, od.lot)}" oninput="$('o_vol').value=this.value">
+    ${pend ? `<div class="lbl">${t('entry')}</div><input id="o_en" type="text" inputmode="decimal" step="any" value="${od.en}">` : ''}
+    <div class="lbl">${t('unit')}</div><select id="o_unit" onchange="odUnit(this.value)">${un}</select>
+    <div class="lbl">SL / TP</div>
+    <div class="two"><input id="o_sl" type="text" inputmode="decimal" step="any" placeholder="SL" value="${od.slv}"><input id="o_tp" type="text" inputmode="decimal" step="any" placeholder="TP" value="${od.tpv}"></div>
+    ${pend ? `<button class="btn" onclick="placeOrder()">${t('place')} ${name}</button><button class="btn g" onclick="odChart()">${t('onchart')}</button>`
+           : `<div class="two"><button class="btn r" onclick="placeOrder('sell')">SELL</button><button class="btn" onclick="placeOrder('buy')">BUY</button></div>`}`);
+}
+function placeOrder(side) {
+  odSave();
+  const k = od.kind, lot = od.lot; if (!(lot > 0)) return;
+  const buy = k === 'mkt' ? side === 'buy' : k.startsWith('buy'), bid = price, ask = price + spread();
+  const en = k === 'mkt' ? (buy ? ask : bid) : +od.en;
+  if (!en) return;
+  const conv = (raw, isSL) => {
+    const v = +raw; if (!v) return 0; if (od.unit === 'price') return v;
+    const diff = od.unit === 'points' ? v * ptSize() : v / (lot * contract());
+    return +((isSL ? !buy : buy) ? en + diff : en - diff).toFixed(digits);
+  };
+  const sl = conv(od.slv, true), tp = conv(od.tpv, false);
+  if (k !== 'mkt') {
+    const ok = k === 'buyLimit' ? en < ask : k === 'sellLimit' ? en > bid : k === 'buyStop' ? en > ask : en < bid;
+    if (!ok) { alert(t('badentry')); return; }
+  }
+  if ((sl && (buy ? sl >= en : sl <= en)) || (tp && (buy ? tp <= en : tp >= en))) { alert(t('wrong')); return; }
+  if (k === 'mkt') openPos(buy ? 'buy' : 'sell', lot, en, sl, tp);
+  else orders.push({ id: nid++, type: buy ? 'buy' : 'sell', kind: k.endsWith('Limit') ? 'limit' : 'stop', lot, en, sl, tp });
+  od = null; hideSheet(); render();
+}
+function odChart() {
+  odSave();
+  const buy = od.kind.startsWith('buy'), d = calcDist(), en = +od.en || price;
+  edit = { mode: 'limit', en, sl: +(buy ? en - d : en + d).toFixed(digits), tp: +(buy ? en + d * 1.5 : en - d * 1.5).toFixed(digits) };
+  $('lot').value = (+od.lot).toFixed(2); od = null; hideSheet(); goTab('pc');
+}
+$('ord').onclick = openOrder;
+
+// ---------- Indicator ----------
+function calcMA() {
+  const out = []; let s = 0;
+  for (let k = 0; k < bars.length; k++) { s += bars[k].close; if (k >= maP) s -= bars[k - maP].close; if (k >= maP - 1) out.push({ time: bars[k].time, value: s / maP }); }
+  maS.setData(out);
+}
+function updMA() { const n = bars.length; if (n < maP) return; let s = 0; for (let k = n - maP; k < n; k++) s += bars[k].close; maS.update({ time: bars[n - 1].time, value: s / maP }); }
+function indSheet() { sheet(`<div class="lbl">${t('ma')}</div><input id="ma_p" type="text" inputmode="decimal" value="${maP}"><button class="btn" onclick="setMA()">${t('apply')}</button><button class="btn g" onclick="clearMA()">${t('remove')}</button>`); }
+function setMA() {
+  maP = Math.max(2, Math.floor(+$('ma_p').value || 20));
+  if (!maS) maS = chart.addLineSeries({ color: '#4c9bff', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  if (bars.length) calcMA(); hideSheet();
+}
+function clearMA() { if (maS) { chart.removeSeries(maS); maS = null; } hideSheet(); }
+
+// ---------- Drawing tools ----------
+const DEF = {
+  h: { color: '#e0c050', width: 1, style: 0 }, v: { color: '#e0c050', width: 1, style: 0 },
+  t: { color: '#4c9bff', width: 2, style: 0, ext: false },
+  r: { color: '#4c9bff', width: 1, style: 0, bg: true }, a: { color: '#e0c050', width: 2, style: 0 },
+  c: { color: '#4c9bff', width: 1, style: 0, bg: true, ext: false },
+  f: { color: '#e0c050', width: 1, style: 0, ext: true, levels: '0,0.236,0.382,0.5,0.618,0.786,1' }
+};
+const tsec = () => tf * 60;
+function t2l(tt) {
+  const n = bars.length; if (!n) return null;
+  const f = bars[0].time, l = bars[n - 1].time;
+  if (tt <= f) return (tt - f) / tsec(); if (tt >= l) return n - 1 + (tt - l) / tsec();
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (bars[m].time <= tt) lo = m; else hi = m; }
+  return lo + (tt - bars[lo].time) / (bars[hi].time - bars[lo].time);
+}
+function l2t(l) {
+  const n = bars.length;
+  if (l <= 0) return bars[0].time + l * tsec(); if (l >= n - 1) return bars[n - 1].time + (l - (n - 1)) * tsec();
+  const k = Math.floor(l); return bars[k].time + (l - k) * (bars[k + 1].time - bars[k].time);
+}
+const X = tt => { const l = t2l(tt); return l == null ? null : chart.timeScale().logicalToCoordinate(l); };
+const Y = p => series.priceToCoordinate(p);
+const px2t = x => { const l = chart.timeScale().coordinateToLogical(x); return l == null || !bars.length ? null : Math.round(l2t(l)); };
+const px2p = y => { const p = series.coordinateToPrice(y); return p == null ? null : +p.toFixed(digits); };
+const levelsOf = d => String(d.levels || '').split(',').map(Number).filter(v => !isNaN(v));
+const extPt = (d, x1, y1, x2, y2, pw) => (!d.ext || x1 === x2) ? [x2, y2] : [x2 > x1 ? pw : 0, y1 + (y2 - y1) / (x2 - x1) * ((x2 > x1 ? pw : 0) - x1)];
+function saveDraw() { store.set('fxr_draw_' + sym, drawings); }
+function loadDraw() { drawings = store.get('fxr_draw_' + sym, []); dseq = drawings.reduce((m, d) => Math.max(m, d.id || 0), 0) + 1; }
+const showCb = () => { $('cb').style.display = drawMode ? 'flex' : 'none'; };
+$('cancel').onclick = () => { drawMode = null; pend = null; showCb(); draw(); };
+function startDraw(k) { hideSheet(); sel = null; draw(); drawMode = k; pend = null; showCb(); toast(t('drawhint')); }
+function clearDraw() { drawings = []; saveDraw(); hideSheet(); draw(); }
+function delDraw(id) { drawings = drawings.filter(x => x.id !== id); saveDraw(); hideSheet(); draw(); }
+function saveDraws(id) {
+  const d = drawings.find(x => x.id === id); if (!d) return;
+  d.name = $('s_nm').value || d.name; d.color = $('s_col').value; d.width = +$('s_w').value; d.style = +$('s_st').value;
+  if ($('s_pr')) { const v = +$('s_pr').value; if (v) d.price = v; }
+  if ($('s_t')) { const v = Date.parse($('s_t').value + ':00Z') / 1000; if (v) d.t = v; }
+  [1, 2].forEach(k => { if ($('s_t' + k)) { const v = Date.parse($('s_t' + k).value + ':00Z') / 1000, p = +$('s_p' + k).value; if (v) d['t' + k] = v; if (p) d['p' + k] = p; } });
+  if ($('s_ext')) d.ext = $('s_ext').checked; if ($('s_extl')) d.extl = $('s_extl').checked;
+  if ($('s_bg')) d.bg = $('s_bg').checked; if ($('s_lv')) d.levels = $('s_lv').value;
+  saveDraw(); hideSheet(); draw();
+}
+function drawSheet(d) {
+  sel = d; draw();
+  const o = (v, k) => `<option value="${v}"${d.style === v ? ' selected' : ''}>${t(k)}</option>`;
+  const iso = v => new Date(v * 1000).toISOString().slice(0, 16);
+  const pt = k => `<div class="lbl">${t('pt')} ${k}</div><div class="two"><input id="s_t${k}" type="datetime-local" value="${iso(d['t' + k])}"><input id="s_p${k}" type="text" inputmode="decimal" step="any" value="${d['p' + k]}"></div>`;
+  const chk = (id, key, v) => `<label class="lbl" style="display:block"><input id="${id}" type="checkbox" style="width:auto;margin:0 8px" ${v ? 'checked' : ''}>${t(key)}</label>`;
+  sheet(`<div class="lbl">${t('t_' + d.type)}</div>
+    <div class="lbl">${t('nm')}</div><input id="s_nm" value="${esc(d.name || t('t_' + d.type))}">
+    <div class="lbl">${t('color')}</div><input id="s_col" type="color" value="${d.color}">
+    <div class="two"><div><div class="lbl">${t('width')}</div><select id="s_w">${[1, 2, 3, 4].map(v => `<option${v === d.width ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
+    <div><div class="lbl">${t('style')}</div><select id="s_st">${o(0, 'solid')}${o(1, 'dashed')}${o(2, 'dotted')}</select></div></div>
+    ${d.type === 'h' ? `<div class="lbl">${t('price')}</div><input id="s_pr" type="text" inputmode="decimal" step="any" value="${d.price}">` : ''}
+    ${d.type === 'v' ? `<div class="lbl">${t('pt')}</div><input id="s_t" type="datetime-local" value="${iso(d.t)}">` : ''}
+    ${d.t1 != null ? pt(1) + pt(2) : ''}
+    ${['t', 'c', 'f'].includes(d.type) ? chk('s_ext', 'ext', d.ext) : ''}
+    ${['t', 'c'].includes(d.type) ? chk('s_extl', 'extl', d.extl) : ''}
+    ${['r', 'c'].includes(d.type) ? chk('s_bg', 'bgf', d.bg) : ''}
+    ${d.type === 'f' ? `<div class="lbl">${t('levels')}</div><input id="s_lv" value="${d.levels}">` : ''}
+    <button class="btn" onclick="saveDraws(${d.id})">${t('save')}</button>
+    <button class="btn g" onclick="copyDraw(${d.id})">${t('copy')}</button>
+    <button class="btn r" onclick="delDraw(${d.id})">${t('del')}</button>`);
+}
+function placing(x, y) {
+  const tt = px2t(x), p = px2p(y); if (tt == null || p == null) return;
+  const add = o => { o.id = dseq++; o.name = t('t_' + o.type) + ' ' + o.id; drawings.push(o); sel = null; saveDraw(); drawMode = null; pend = null; showCb(); draw(); };
+  if (drawMode === 'h' || drawMode === 'v') add(Object.assign({ type: drawMode, t: tt, price: p }, DEF[drawMode]));
+  else if (!pend) { pend = { t: tt, p }; toast(t('p2')); }
+  else { const o = Object.assign({ type: drawMode, t1: pend.t, p1: pend.p, t2: tt, p2: p }, DEF[drawMode]); if (drawMode === 'c') o.off = calcDist(); add(o); }
+}
+function segDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, Ls = dx * dx + dy * dy; let u = Ls ? ((px - x1) * dx + (py - y1) * dy) / Ls : 0; u = Math.max(0, Math.min(1, u));
+  return Math.hypot(px - (x1 + u * dx), py - (y1 + u * dy));
+}
+function hitOne(d, x, y) {
+  const pw = chart.timeScale().width();
+  if (d.type === 'h') { const yy = Y(d.price); return yy != null && Math.abs(yy - y) < 18 ? 'body' : null; }
+  if (d.type === 'v') { const xx = X(d.t); return xx != null && Math.abs(xx - x) < 18 ? 'body' : null; }
+  const x1 = X(d.t1), y1 = Y(d.p1), x2 = X(d.t2), y2 = Y(d.p2);
+  if ([x1, y1, x2, y2].some(v => v == null)) return null;
+  if (Math.hypot(x - x1, y - y1) < 28) return 'p1'; if (Math.hypot(x - x2, y - y2) < 28) return 'p2';
+  if (d.type === 'c') { const yo = Y((d.p1 + d.p2) / 2 + d.off); if (yo != null && Math.hypot(x - (x1 + x2) / 2, y - yo) < 28) return 'off'; }
+  if (d.type === 't' || d.type === 'a' || d.type === 'c') {
+    const e = ends(d, x1, y1, x2, y2, pw);
+    if (segDist(x, y, e[0], e[1], e[2], e[3]) < 18) return 'body';
+    if (d.type === 'c') { const o1 = Y(d.p1 + d.off), o2 = Y(d.p2 + d.off); if (o1 != null && o2 != null) { const f = ends(d, x1, o1, x2, o2, pw); if (segDist(x, y, f[0], f[1], f[2], f[3]) < 18) return 'body'; } }
+    return null;
+  }
+  if (d.type === 'r') {
+    const l = Math.min(x1, x2), r = Math.max(x1, x2), tp = Math.min(y1, y2), bt = Math.max(y1, y2);
+    const dd = Math.min(segDist(x, y, l, tp, r, tp), segDist(x, y, r, tp, r, bt), segDist(x, y, r, bt, l, bt), segDist(x, y, l, bt, l, tp));
+    return dd < 18 ? 'body' : null;
+  }
+  const xl = Math.min(x1, x2), xr = d.ext ? pw : Math.max(x1, x2);
+  if (x >= xl - 8 && x <= xr + 8) for (const r of levelsOf(d)) { const yy = Y(d.p2 + (d.p1 - d.p2) * r); if (yy != null && Math.abs(yy - y) < 14) return 'body'; }
+  return segDist(x, y, x1, y1, x2, y2) < 16 ? 'body' : null;
+}
+function hitTest(x, y) {
+  const order = drawings.slice().reverse(); if (sel) order.unshift(sel);
+  for (const d of order) { if (d.hidden) continue; const part = hitOne(d, x, y); if (part) return { d, part }; }
+  return null;
+}
+function initDrag(g, h) {
+  const d = h.d; g.d = d; g.part = h.part;
+  g.px = { x1: d.t1 != null ? X(d.t1) : 0, y1: d.p1 != null ? Y(d.p1) : 0, x2: d.t2 != null ? X(d.t2) : 0, y2: d.p2 != null ? Y(d.p2) : 0, hy: d.type === 'h' ? Y(d.price) : 0, vx: d.type === 'v' ? X(d.t) : 0, offY: d.type === 'c' ? Y((d.p1 + d.p2) / 2 + d.off) : 0 };
+}
+function dragDraw(p) {
+  const g = G, d = g.d, dx = p.x - g.x, dy = p.y - g.y;
+  if (!g.moved && Math.hypot(dx, dy) < 8) return;
+  g.moved = true; const q = g.px;
+  if (d.type === 'h') { const v = px2p(q.hy + dy); if (v != null) d.price = v; }
+  else if (d.type === 'v') { const v = px2t(q.vx + dx); if (v != null) d.t = v; }
+  else {
+    if (g.part === 'off') { const v = px2p(q.offY + dy); if (v != null) d.off = v - (d.p1 + d.p2) / 2; draw(); return; }
+    const mv1 = g.part !== 'p2', mv2 = g.part !== 'p1';
+    if (mv1) { const a = px2t(q.x1 + dx), b = px2p(q.y1 + dy); if (a != null && b != null) { d.t1 = a; d.p1 = b; } }
+    if (mv2) { const a = px2t(q.x2 + dx), b = px2p(q.y2 + dy); if (a != null && b != null) { d.t2 = a; d.p2 = b; } }
+  }
+  draw();
+}
+
+
+// ---------- Objects list, icons, helpers ----------
+const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ICO = {
+  h: '<path d="M3 12h18"/>', v: '<path d="M12 3v18"/>',
+  t: '<path d="M4 19L20 5"/><circle cx="4" cy="19" r="1.8"/><circle cx="20" cy="5" r="1.8"/>',
+  c: '<path d="M3 16L17 6M7 21L21 11"/>', r: '<rect x="4" y="6" width="16" height="12" rx="1.5"/>',
+  a: '<path d="M5 19L19 5M10 5h9v9"/>', f: '<path d="M3 5h18M3 10h18M3 15h18M3 20h18"/>',
+  ind: '<path d="M3 17c3-8 5 4 8-3s5-5 10-8"/>',
+  sty: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  obj: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  clr: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3 3l18 18M10.6 6.2A9.8 9.8 0 0112 6c6 0 10 6 10 6a17 17 0 01-3.2 3.9M6.6 7.6C3.7 9.4 2 12 2 12s4 7 10 7a9.6 9.6 0 003.4-.6"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/>'
+};
+const ico = k => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICO[k] || ''}</svg>`;
+function ends(d, x1, y1, x2, y2, pw) {
+  let ax = x1, ay = y1, bx = x2, by = y2;
+  if (x1 !== x2) {
+    const k = (y2 - y1) / (x2 - x1), at = x => y1 + k * (x - x1), right = x2 > x1;
+    if (d.ext) { bx = right ? pw : 0; by = at(bx); }
+    if (d.extl) { ax = right ? 0 : pw; ay = at(ax); }
+  }
+  return [ax, ay, bx, by];
+}
+function objectsSheet() {
+  const tools = ['h', 'v', 't', 'c', 'r', 'a', 'f'].map(k => `<button class="oi" onclick="startDraw('${k}')">${ico(k)}</button>`).join('');
+  const rows = drawings.map(d => `<div class="orow"><button class="eye${d.hidden ? '' : ' on'}" onclick="toggleVis(${d.id})">${ico(d.hidden ? 'eyeoff' : 'eye')}</button><div class="onm" onclick="editObj(${d.id})">${esc(d.name || t('t_' + d.type))}<small>${t('t_' + d.type)}</small></div><span class="osw" style="background:${d.color}"></span></div>`).join('') || `<div class="lbl">${t('empty')}</div>`;
+  sheet(`<div class="lbl">${t('objs')}</div><div class="otools">${tools}</div>${rows}${drawings.length ? `<button class="btn r" style="margin-top:12px" onclick="clearDraw()">${t('clr')}</button>` : ''}`);
+}
+function toggleVis(id) { const d = drawings.find(x => x.id === id); if (d) { d.hidden = !d.hidden; if (d.hidden && sel === d) sel = null; saveDraw(); objectsSheet(); draw(); } }
+function editObj(id) { const d = drawings.find(x => x.id === id); if (d) drawSheet(d); }
+function copyDraw(id) {
+  const d = drawings.find(x => x.id === id); if (!d) return;
+  const n = JSON.parse(JSON.stringify(d)), dp = calcDist() * 0.4, dt = tsec() * 6;
+  n.id = dseq++; n.name = (d.name || t('t_' + d.type)) + ' ' + t('copy');
+  if (n.price != null) n.price = +(n.price + dp).toFixed(digits);
+  if (n.t != null) n.t += dt;
+  if (n.t1 != null) { n.t1 += dt; n.t2 += dt; n.p1 = +(n.p1 + dp).toFixed(digits); n.p2 = +(n.p2 + dp).toFixed(digits); }
+  drawings.push(n); saveDraw(); hideSheet(); sel = n; draw();
+}
+$('ft_e').innerHTML = ico('edit'); $('ft_c').innerHTML = ico('copy'); $('ft_d').innerHTML = ico('clr');
+$('ft_e').onclick = () => { if (sel) drawSheet(sel); };
+$('ft_c').onclick = () => { if (sel) copyDraw(sel.id); };
+$('ft_d').onclick = () => { if (sel) delDraw(sel.id); };
+
+// ---------- Gestures (tap / long-press / drag) ----------
+const chEl = $('chart'), OPT = { capture: true, passive: false };
+const stop = e => { e.stopPropagation(); if (e.cancelable) e.preventDefault(); };
+const ptOf = e => { const tt = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e, r = chEl.getBoundingClientRect(); return { x: tt.clientX - r.left, y: tt.clientY - r.top }; };
+function clearG() { if (G && G.timer) clearTimeout(G.timer); G = null; }
+function gStart(e) {
+  if (e.type === 'mousedown' && Date.now() - lastTouch < 700) return;
+  if (e.type === 'touchstart') { lastTouch = Date.now(); if (e.touches.length > 1) { clearG(); return; } }
+  clearG(); const p = ptOf(e);
+  G = { x: p.x, y: p.y, t0: Date.now(), mode: 'wait', moved: false };
+  if (edit) { const k = nearEdit(p.y); if (k) { G.mode = 'line'; G.k = k; stop(e); } return; }
+  if (!bars.length) return;
+  if (drawMode) { beginPlace(p); stop(e); return; }
+  const h = hitTest(p.x, p.y); if (!h) return;
+  G.hit = h;
+  if (sel && h.d === sel) { G.mode = 'drag'; initDrag(G, h); stop(e); return; }
+  G.timer = setTimeout(() => {
+    if (!G || G.mode !== 'wait') return;
+    G.mode = 'hold'; G.long = true; sel = G.hit.d; ftOn = true; draw();
+    if (navigator.vibrate) navigator.vibrate(30);
+  }, 350);
+}
+function gMove(e) {
+  if (!G) return; const p = ptOf(e);
+  if (G.mode === 'wait') { if (Math.hypot(p.x - G.x, p.y - G.y) > 10) { G.moved = true; if (G.timer) clearTimeout(G.timer); } return; }
+  stop(e);
+  if (G.mode === 'line') { const v = px2p(p.y); if (v != null) { edit[G.k] = v; updEditLines(); } }
+  else if (G.mode === 'drag') dragDraw(p);
+  else if (G.mode === 'hold') { if (Math.hypot(p.x - G.x, p.y - G.y) > 12) { initDrag(G, G.hit); G.x = p.x; G.y = p.y; G.mode = 'drag'; } }
+  else if (G.mode === 'place') placeMove(p);
+}
+function gEnd(e) {
+  if (!G) return; const g = G; clearG(); const p = ptOf(e);
+  if (g.mode === 'line') { stop(e); return; }
+  if (g.mode === 'place') { stop(e); endPlace(g); return; }
+  if (g.mode === 'hold') { stop(e); return; }
+  if (g.mode === 'drag') { stop(e); if (g.moved) saveDraw(); else if (!g.long) { sel = null; ftOn = false; draw(); } return; }
+  if (g.moved) return;
+  if (g.hit) { if (Date.now() - g.t0 < 350) { sel = g.hit.d; ftOn = false; draw(); } return; }
+  if (edit || !data.length) return;
+  if (sel) { sel = null; ftOn = false; draw(); return; }
+  openRing(p.x, p.y);
+}
+function beginPlace(p) {
+  const tt = px2t(p.x), pr = px2p(p.y); if (tt == null || pr == null) return;
+  const o = Object.assign({ type: drawMode }, DEF[drawMode]);
+  if (drawMode === 'h') o.price = pr; else if (drawMode === 'v') o.t = tt;
+  else { o.t1 = o.t2 = tt; o.p1 = o.p2 = pr; if (drawMode === 'c') o.off = calcDist(); }
+  o.id = dseq++; o.name = t('t_' + o.type) + ' ' + o.id; drawings.push(o); sel = o; ftOn = false;
+  G.mode = 'place'; G.d = o; draw();
+}
+function placeMove(p) {
+  const d = G.d, tt = px2t(p.x), pr = px2p(p.y); if (tt == null || pr == null) return;
+  if (Math.hypot(p.x - G.x, p.y - G.y) > 10) G.moved = true;
+  if (d.type === 'h') d.price = pr; else if (d.type === 'v') d.t = tt; else { d.t2 = tt; d.p2 = pr; }
+  draw();
+}
+function endPlace(g) {
+  const d = g.d;
+  if (d.t1 != null && !g.moved) { const tt = px2t(g.x + 90), pr = px2p(g.y - 60); if (tt != null && pr != null) { d.t2 = tt; d.p2 = pr; } }
+  drawMode = null; pend = null; showCb(); sel = null; ftOn = false; saveDraw(); draw();
+}
+['touchstart', 'mousedown'].forEach(n => chEl.addEventListener(n, gStart, OPT));
+['touchmove', 'mousemove'].forEach(n => chEl.addEventListener(n, gMove, OPT));
+['touchend', 'touchcancel', 'mouseup'].forEach(n => chEl.addEventListener(n, gEnd, OPT));
+chEl.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---------- Tool wheel ----------
+const RING = ['h', 'v', 't', 'c', 'r', 'a', 'f', 'obj', 'ind', 'sty'];
+function openRing(x, y) {
+  const pc = $('pc'), w = pc.clientWidth, h = pc.clientHeight;
+  const cx = Math.max(135, Math.min(w - 135, x)), cy = Math.max(135, Math.min(h - 135, y));
+  let html = `<div id="rb" onclick="closeRing()"></div><div id="rg" style="left:${cx - 130}px;top:${cy - 130}px">`;
+  RING.forEach((it, k) => {
+    const a = k / RING.length * 2 * Math.PI, px = 130 + 101 * Math.sin(a) - 22, py = 130 - 101 * Math.cos(a) - 22;
+    html += `<button class="ri" style="left:${px}px;top:${py}px" onclick="ringPick(${k})">${ico(it)}</button>`;
+  });
+  $('ringwrap').innerHTML = html + '</div>'; $('ringwrap').style.display = 'block';
+}
+function closeRing() { $('ringwrap').style.display = 'none'; $('ringwrap').innerHTML = ''; }
+function ringPick(k) {
+  const v = RING[k]; closeRing();
+  if (['h', 'v', 't', 'c', 'r', 'a', 'f'].includes(v)) startDraw(v);
+  else if (v === 'obj') objectsSheet(); else if (v === 'ind') indSheet(); else styleSheet();
+}
+
+// ---------- Overlay canvas ----------
+function draw() {
+  const c = $('dc'), w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1;
+  const ft = $('ft'); if (ft) if (!sel) ftOn = false; ft.style.display = (sel && ftOn && drawings.includes(sel)) ? 'flex' : 'none';
+  if (!w || !series) return;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  if (!bars.length) return;
+  const pw = chart.timeScale().width(), ph = h - 28;
+  g.save(); g.beginPath(); g.rect(0, 0, pw, ph); g.clip(); g.font = '11px Tahoma'; g.lineCap = 'round'; g.lineJoin = 'round';
+  const line = (a, b, c2, d2) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c2, d2); g.stroke(); };
+  const dot = (x, y, col) => { g.save(); g.setLineDash([]); g.shadowColor = col; g.shadowBlur = 10; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 3; g.strokeStyle = col; g.stroke(); g.restore(); };
+  const poly = (pts, d, a) => { g.save(); g.globalAlpha = a; g.fillStyle = d.color; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fill(); g.restore(); };
+  for (const d of drawings) {
+    if (d.hidden) continue;
+    g.strokeStyle = g.fillStyle = d.color; g.lineWidth = d.width + (d === sel ? 1 : 0);
+    g.setLineDash(d.style === 1 ? [8, 6] : d.style === 2 ? [2, 5] : []);
+    if (d.type === 'h') { const yy = Y(d.price); if (yy != null) { line(0, yy, pw, yy); g.fillText(nd(d.price.toFixed(digits)), 4, yy - 4); if (d === sel) dot(pw / 2, yy, d.color); } }
+    else if (d.type === 'v') { const xx = X(d.t); if (xx != null) { line(xx, 0, xx, ph); if (d === sel) dot(xx, ph / 2, d.color); } }
+    else {
+      const x1 = X(d.t1), y1 = Y(d.p1), x2 = X(d.t2), y2 = Y(d.p2);
+      if ([x1, y1, x2, y2].some(v => v == null)) continue;
+      if (d.type === 't' || d.type === 'a') {
+        const e = ends(d, x1, y1, x2, y2, pw); line(e[0], e[1], e[2], e[3]);
+        if (d.type === 'a') { const a = Math.atan2(y2 - y1, x2 - x1); g.setLineDash([]); g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - 16 * Math.cos(a - 0.4), y2 - 16 * Math.sin(a - 0.4)); g.lineTo(x2 - 16 * Math.cos(a + 0.4), y2 - 16 * Math.sin(a + 0.4)); g.closePath(); g.fill(); }
+      } else if (d.type === 'c') {
+        const o1 = Y(d.p1 + d.off), o2 = Y(d.p2 + d.off), e = ends(d, x1, y1, x2, y2, pw);
+        if (o1 != null && o2 != null) {
+          const f = ends(d, x1, o1, x2, o2, pw);
+          if (d.bg) poly([[e[0], e[1]], [e[2], e[3]], [f[2], f[3]], [f[0], f[1]]], d, 0.14);
+          line(e[0], e[1], e[2], e[3]); line(f[0], f[1], f[2], f[3]);
+          if (d === sel) dot((x1 + x2) / 2, Y((d.p1 + d.p2) / 2 + d.off), d.color);
+        }
+      } else if (d.type === 'r') {
+        const l = Math.min(x1, x2), tp = Math.min(y1, y2), rw = Math.abs(x2 - x1), rh = Math.abs(y2 - y1);
+        if (d.bg) { g.save(); g.globalAlpha = 0.15; g.fillRect(l, tp, rw, rh); g.restore(); }
+        g.strokeRect(l, tp, rw, rh);
+      } else {
+        const xl = Math.min(x1, x2), xr = d.ext ? pw : Math.max(x1, x2);
+        for (const r of levelsOf(d)) { const lp = d.p2 + (d.p1 - d.p2) * r, yy = Y(lp); if (yy == null) continue; line(xl, yy, xr, yy); g.fillText(nd(r + ' (' + lp.toFixed(digits) + ')'), xl + 4, yy - 3); }
+        g.globalAlpha = 0.6; g.lineWidth = 1; g.setLineDash([4, 4]); line(x1, y1, x2, y2); g.globalAlpha = 1;
+      }
+      if (d === sel) { dot(x1, y1, d.color); dot(x2, y2, d.color); }
+    }
+  }
+  if (pend) { const a = X(pend.t), b = Y(pend.p); if (a != null && b != null) dot(a, b, '#4c9bff'); }
+  g.restore();
+}
+let lf = 0; (function loop() { if ((lf++ & 1) === 0 && (drawings.length || pend)) draw(); requestAnimationFrame(loop); })();
+
+
+// ---------- Quotes (symbol list: open / add / edit) ----------
+let qedit = false;
+const fmtP = v => v >= 1000 ? v.toFixed(2) : v >= 10 ? v.toFixed(3) : v.toFixed(5);
+function saveSym(name, arr) {
+  const meta = { n: arr.length, first: arr[0].c, last: arr[arr.length - 1].c, t1: arr[arr.length - 1].t };
+  return dbPut(name, pack(arr)).then(() => dbPut('meta:' + name, meta)).then(() => { refreshSaved(); if (tab === 'pq') renderQuotes(); }).catch(() => {});
+}
+async function renderQuotes() {
+  let rows = '';
+  try {
+    const ks = ((await dbKeys()) || []).filter(k => !String(k).startsWith('meta:')).sort();
+    for (const k of ks) {
+      let m = await dbGet('meta:' + k);
+      if (!m) { const a = await dbGet(k); if (a && a.length) { m = { n: a.length, first: a[0][4], last: a[a.length - 1][4], t1: a[a.length - 1][0] }; dbPut('meta:' + k, m).catch(() => {}); } }
+      if (!m) continue;
+      const ch = (m.last - m.first) / m.first * 100;
+      rows += `<div class="qrow" ${qedit ? '' : `onclick="openSym('${k}')"`}><div><b>${k}</b><small>${m.n} · ${new Date(m.t1 * 1000).toISOString().slice(0, 10)}</small></div><div class="qp"><b>${fmtP(m.last)}</b><small class="${ch >= 0 ? 'pos' : 'neg'}">${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%</small></div>${qedit ? `<button class="qd" onclick="delSym('${k}')">🗑</button>` : ''}</div>`;
+    }
+  } catch (e) {}
+  $('pq').innerHTML = `<div class="qh"><button id="q_e" class="${qedit ? 'on' : ''}">✎</button><span>${t('quotes')}</span><button id="q_a">＋</button></div>` + (rows || `<div class="lbl" style="padding:18px">${t('qempty')}</div>`);
+  $('q_e').onclick = () => { qedit = !qedit; renderQuotes(); };
+  $('q_a').onclick = addSymSheet;
+}
+function openSym(k) { dbGet(k).then(a => a && load(unpack(a), k)).catch(() => {}); }
+function delSym(k) { dbOp('readwrite', st => { st.delete(k); st.delete('meta:' + k); }).then(() => { refreshSaved(); renderQuotes(); }).catch(() => {}); }
+function addSymSheet() {
+  const presets = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'DOGEUSDT', 'PAXGUSDT', 'EURUSDT'];
+  sheet(`<div class="sheet-h">${t('qadd')}</div>
+    <div class="lbl">${t('qsym')}</div><select id="a_sel">${presets.map(p => `<option>${p}</option>`).join('')}</select>
+    <div class="lbl">${t('custom')}</div><input id="a_cu" placeholder="BTCUSDT" autocapitalize="characters">
+    <div class="lbl">${t('qdays')}</div><input id="a_dy" type="text" inputmode="decimal" value="5" min="1" max="30">
+    <button class="btn" id="a_go">${t('dl')}</button><button class="btn g" onclick="hideSheet();$('file').click()">CSV</button><div class="lbl" id="a_msg"></div>`);
+  $('a_go').onclick = async () => {
+    const s = ($('a_cu').value.trim() || $('a_sel').value).toUpperCase().replace(/[^A-Z0-9]/g, ''), days = Math.max(1, Math.min(30, +$('a_dy').value || 5));
+    if (!s) return; $('a_go').disabled = true; $('a_msg').textContent = t('loading');
+    try { const arr = await fetchBinance(s, days); if (arr.length < 10) throw new Error('empty'); await saveSym(s, arr); hideSheet(); load(arr, s); }
+    catch (e) { $('a_msg').textContent = t('netfail'); $('a_go').disabled = false; }
+  };
+}
+
+// ---------- Tabs & render ----------
+function goTab(x) {
+  tab = x;
+  if (x === 'pq') renderQuotes();
+  document.querySelectorAll('.p').forEach(p => p.classList.toggle('on', p.id === x));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === x));
+  render();
+}
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => goTab(b.dataset.t));
+const pr = (l, v) => { const s = v.toFixed(digits); return `${l}<b>${s.slice(0, -1)}<sup>${s.slice(-1)}</sup></b>`; };
+
+function render() {
+  if (!data.length || !series) { $('eq').textContent = t('trade'); return; }
+  const bid = price, ask = bid + spread();
+  $('sym').textContent = sym + ', ' + tfName(tf);
+  $('tm').textContent = new Date(curT() * 1000).toISOString().replace('T', ' ').slice(0, 19) + '  |  ' + (i + 1) + '/' + data.length;
+  const s1 = bid.toFixed(digits), s2 = ask.toFixed(digits), setT = (id, v) => { const e = $(id); if (e.textContent !== v) e.textContent = v; };
+  setT('sm', s1.slice(0, -1)); setT('ss', s1.slice(-1)); setT('bm', s2.slice(0, -1)); setT('bs', s2.slice(-1));
+  if (!bidL) {
+    bidL = series.createPriceLine({ price: bid, color: '#4c9bff', lineWidth: 1, axisLabelVisible: true, title: '' });
+    askL = series.createPriceLine({ price: ask, color: '#1f8a9c', lineWidth: 1, axisLabelVisible: true, title: '' });
+  } else { bidL.applyOptions({ price: bid }); askL.applyOptions({ price: ask }); }
+  drawLines();
+  const fl2 = pos.reduce((s, p) => s + profitOf(p, exitNow(p)), 0);
+  $('eq').textContent = (balance + fl2).toFixed(2);
+  if (tab === 'pt') renderTrade(fl2);
+  if (tab === 'ph') renderHist();
+}
+function renderTrade(fl2) {
+  let rows = '';
+  for (const p of pos) {
+    const pl = profitOf(p, exitNow(p));
+    rows += `<div class="row" onclick="posSheet(${p.id})"><div><b>${sym}</b>, <span class="${p.type === 'buy' ? 'buyc' : 'sellc'}">${p.type} ${p.lot}</span><small>${p.price.toFixed(digits)} → ${exitNow(p).toFixed(digits)}</small></div><b class="${cls(pl)}">${pl.toFixed(2)}</b></div>`;
+  }
+  let ord = '';
+  for (const o of orders) ord += `<div class="row" onclick="orderSheet(${o.id})"><div><b>${sym}</b>, <span class="${o.type === 'buy' ? 'buyc' : 'sellc'}">${o.type} ${o.kind} ${o.lot}</span><small>${o.en} · SL ${o.sl} · TP ${o.tp}</small></div></div>`;
+  $('pt').innerHTML = `<div class="row"><span>Balance</span><b>${balance.toFixed(2)}</b></div><div class="row"><span>Equity</span><b>${(balance + fl2).toFixed(2)}</b></div><div class="row"><span>Profit</span><b class="${cls(fl2)}">${fl2.toFixed(2)}</b></div>` +
+    (rows || `<div class="row"><small style="direction:${getComputedStyle(document.documentElement).getPropertyValue('--dir')}">${t('nopos')}</small></div>`) +
+    (ord ? `<div class="row"><small>${t('orders')}</small></div>` + ord : '');
+}
+function renderHist() {
+  const wins = hist.filter(x => x.profit > 0), losses = hist.filter(x => x.profit <= 0);
+  const gp = wins.reduce((s, x) => s + x.profit, 0), gl = Math.abs(losses.reduce((s, x) => s + x.profit, 0));
+  let b = initial, peak = initial, dd = 0;
+  for (const x of hist) { b += x.profit; peak = Math.max(peak, b); dd = Math.max(dd, peak - b); }
+  const st = (k, v) => `<div class="row"><span>${k}</span><b>${v}</b></div>`;
+  let h = st('Trades', hist.length) + st('Win rate', hist.length ? (wins.length / hist.length * 100).toFixed(1) + '%' : '-') + st('Profit factor', gl ? (gp / gl).toFixed(2) : (gp ? '∞' : '-')) + st('Max drawdown', dd.toFixed(2));
+  for (const x of hist.slice(-100).reverse())
+    h += `<div class="row"><div><b>${sym}</b>, <span class="${x.type === 'buy' ? 'buyc' : 'sellc'}">${x.type} ${x.lot}</span><small>${x.price.toFixed(digits)} → ${(+x.exit).toFixed(digits)} · ${x.reason}</small></div><b class="${cls(x.profit)}">${x.profit.toFixed(2)}</b></div>`;
+  $('ph').innerHTML = h;
+}
+
+// ---------- Digits follow the chosen language ----------
+const DIG = { fa: '۰۱۲۳۴۵۶۷۸۹', ar: '٠١٢٣٤٥٦٧٨٩' }, LOC = { fa: 'fa-IR-u-ca-gregory', en: 'en-US', ar: 'ar-EG-u-ca-gregory', tr: 'tr-TR' };
+const nd = x => { const m = DIG[LANG]; return m ? String(x).replace(/[0-9]/g, d => m[d]) : String(x); };
+const toLatin = x => String(x).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632);
+const SKIP = /^(SCRIPT|STYLE|INPUT|TEXTAREA|SELECT|OPTION|CANVAS)$/;
+function fixNode(n) {
+  if (n.nodeType === 3) { const m = DIG[LANG]; if (m && /[0-9]/.test(n.nodeValue)) n.nodeValue = nd(n.nodeValue); }
+  else if (n.nodeType === 1 && !SKIP.test(n.tagName)) n.childNodes.forEach(fixNode);
+}
+function convAll() {
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) { if (n.parentNode && SKIP.test(n.parentNode.tagName)) continue; const v = nd(toLatin(n.nodeValue)); if (v !== n.nodeValue) n.nodeValue = v; }
+}
+new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') fixNode(m.target); else m.addedNodes.forEach(fixNode); } }).observe(document.body, { childList: true, subtree: true, characterData: true });
+document.addEventListener('input', e => { const el = e.target; if (el && el.inputMode === 'decimal') { const v = toLatin(el.value).replace(/[٫،,]/g, '.'); if (v !== el.value) el.value = v; } });
+
+window.addEventListener('error', e => { try { toast('⚠ ' + (e.message || 'error')); } catch (_) {} });
+
+// ---------- Init ----------
+applyStyle(); setTF(1, true); applyLang(); refreshSaved();
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
